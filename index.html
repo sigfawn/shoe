@@ -39,6 +39,7 @@
         <button id="scanBtn" class="primary-btn">Start camera</button>
         <button id="stopBtn" class="secondary-btn" hidden>Stop</button>
       </div>
+      <button id="photoBtn" class="secondary-btn wide">📷 Read a photo instead (OCR)</button>
       <p id="scanStatus" class="scan-status" aria-live="polite"></p>
       <details class="manual">
         <summary>Camera won't work? Enter it by hand</summary>
@@ -75,6 +76,9 @@
         </label>
       </div>
 
+      <button id="ocrFillBtn" class="secondary-btn wide">📷 Auto-fill from a sticker photo</button>
+      <p id="ocrStatus" class="scan-status" aria-live="polite"></p>
+
       <div id="verdict" class="verdict" hidden>
         <div class="verdict-score">
           <span id="verdictEmoji">🤔</span>
@@ -103,13 +107,15 @@
     <h3>How it works</h3>
     <ol>
       <li><strong>Scan</strong> the barcode (UPC) or QR code on the box. That identifies the exact shoe.</li>
-      <li>The app fills in the <strong>MSRP</strong> if it knows the shoe. Type the <strong>sticker price</strong> you see in-store.</li>
+      <li>The app fills in the <strong>MSRP</strong> if it knows the shoe. Type the <strong>sticker price</strong>, or tap <strong>📷 Auto-fill from a sticker photo</strong> to read it with on-device OCR.</li>
       <li>You get a discount % vs MSRP — a quick sanity check, not the whole story.</li>
       <li>Tap the <strong>StockX / GOAT / eBay sold</strong> links to see what the shoe actually resells for. That's the real "good deal?" answer.</li>
     </ol>
     <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Camera needs an https:// page (GitHub Pages works).</p>
     <button id="helpClose" class="primary-btn">Got it</button>
   </dialog>
+
+  <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden />
 
   <footer class="foot muted fine">Runs entirely on your device · no accounts, no tracking</footer>
 

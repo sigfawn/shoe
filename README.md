@@ -12,8 +12,11 @@ uploaded. Just static files you host anywhere with HTTPS.
    Decoding runs on-device via [ZXing](https://github.com/zxing-js/library).
 2. **Identifies** the shoe from a small built-in catalog (name + MSRP), or
    falls back to showing the raw style/UPC for unknown shoes.
-3. **Discount check** — enter the in-store sticker price and it shows the
-   percentage off MSRP with a plain-English verdict.
+3. **Discount check** — enter the in-store sticker price (or tap **📷
+   Auto-fill from a sticker photo** to read it with on-device OCR via
+   [Tesseract.js](https://github.com/naptha/tesseract.js)) and it shows the
+   percentage off MSRP with a plain-English verdict. OCR also reads the style
+   code off the label as a second way to identify the shoe.
 4. **Real resale comps** — one-tap links to **eBay sold listings, StockX,
    GOAT, and Google Shopping** for the exact model. This is the honest answer
    to "is it a good price?", because the box only knows MSRP, not resale value.
@@ -72,6 +75,8 @@ byUpc: {
 
 - Verdict % is measured against **MSRP only** — always tap the resale links
   for the true market picture.
-- The camera decoder needs decent light and a steady, close shot.
+- The camera decoder (and OCR) needs decent light and a steady, close shot.
+- OCR runs on-device and downloads its model (~a few MB) the first time you
+  use it; accuracy varies with lighting and glare on the sticker.
 - The built-in catalog is a starter set; most boxes will scan as "Unknown"
   until you add them (the app still works, you just confirm the MSRP).

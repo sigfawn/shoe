@@ -31,6 +31,10 @@
     helpBtn: $("helpBtn"),
     helpDialog: $("helpDialog"),
     helpClose: $("helpClose"),
+    photoBtn: $("photoBtn"),
+    ocrFillBtn: $("ocrFillBtn"),
+    ocrInput: $("ocrInput"),
+    ocrStatus: $("ocrStatus"),
   };
 
   const CATALOG = window.SHOE_CATALOG || { byUpc: {}, byStyle: {} };
@@ -278,6 +282,116 @@
     els.discountFill.style.background = color;
   }
 
+  /* ---------- OCR (on-device, lazy-loaded) ---------- */
+
+  const TESSERACT_SRC = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+  let tessLoading = null;
+
+  function loadTesseract() {
+    if (window.Tesseract) return Promise.resolve();
+    if (tessLoading) return tessLoading;
+    tessLoading = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = TESSERACT_SRC;
+      s.onload = () => resolve();
+      s.onerror = () => { tessLoading = null; reject(new Error("tesseract load failed")); };
+      document.head.appendChild(s);
+    });
+    return tessLoading;
+  }
+
+  // mode: "identify" (from scan card) or "fill" (from result card)
+  async function runOcr(file, mode) {
+    const statusEl = mode === "fill" ? els.ocrStatus : els.status;
+    if (!file) return;
+    try {
+      setEl(statusEl, "Loading text reader…");
+      await loadTesseract();
+      setEl(statusEl, "Reading the photo…");
+      const worker = await window.Tesseract.createWorker("eng", 1, {
+        logger: (m) => {
+          if (m && m.status === "recognizing text") {
+            setEl(statusEl, `Reading… ${Math.round((m.progress || 0) * 100)}%`);
+          }
+        },
+      });
+      const { data } = await worker.recognize(file);
+      await worker.terminate();
+      applyOcr((data && data.text) || "", mode, statusEl);
+    } catch (e) {
+      setEl(statusEl, "Couldn't read that photo. Try again in better light, or type the price in.");
+    }
+  }
+
+  function priceList(text) {
+    return [...text.matchAll(/(\d{1,4}\.\d{2})/g)]
+      .map((m) => parseFloat(m[1]))
+      .filter((n) => n > 0 && n < 100000);
+  }
+
+  function nearestPrice(text, kw) {
+    const i = text.indexOf(kw);
+    if (i < 0) return null;
+    let best = null, bd = Infinity;
+    for (const m of text.matchAll(/(\d{1,4}\.\d{2})/g)) {
+      const d = Math.abs(m.index - i);
+      if (d < bd) { bd = d; best = parseFloat(m[1]); }
+    }
+    return best;
+  }
+
+  function applyOcr(text, mode, statusEl) {
+    const up = text.toUpperCase();
+
+    // 1) Try to identify the shoe from a printed style code (e.g. 487754 012).
+    const sm = up.match(/\b(\d{6})[-\s]?(\d{3})\b/);
+    let identified = false;
+    if (sm && (mode === "identify" || !current.name)) {
+      const key = sm[1] + sm[2];
+      if (CATALOG.byStyle[key]) {
+        identifyByStyle(key);
+        identified = true;
+      } else {
+        current.style = key;
+      }
+    }
+
+    // 2) Pull the two prices. Prefer the ones next to WAS/RETAIL and NOW/OUR.
+    let msrp = nearestPrice(up, "WAS");
+    if (msrp == null) msrp = nearestPrice(up, "RETAIL");
+    if (msrp == null) msrp = nearestPrice(up, "SUGG");
+    let now = nearestPrice(up, "NOW");
+    if (now == null) now = nearestPrice(up, "OUR");
+
+    const all = priceList(up);
+    let fillMsrp = msrp, fillPrice = now;
+    if (all.length === 1) {
+      // A lone price is almost always the sticker (sale) price.
+      if (fillPrice == null) fillPrice = all[0];
+      if (fillMsrp === all[0] && fillPrice === all[0]) fillMsrp = null;
+    } else if (all.length >= 2) {
+      const uniq = [...new Set(all)].sort((a, b) => b - a);
+      if (fillMsrp == null) fillMsrp = uniq[0];
+      if (fillPrice == null) fillPrice = uniq[uniq.length - 1];
+    }
+
+    // In identify mode we may still be on the scan card — surface the result.
+    if (mode === "identify" && !identified) {
+      showResult({ name: current.name || null, style: current.style || null }, "Read");
+    }
+
+    if (fillMsrp != null && !els.msrp.value) els.msrp.value = fillMsrp.toFixed(2);
+    if (fillPrice != null) els.price.value = fillPrice.toFixed(2);
+    buildCompLinks();
+    updateVerdict();
+
+    if (fillPrice == null && fillMsrp == null) {
+      setEl(statusEl, "Read the photo but couldn't spot a price — type it in.");
+    } else {
+      setEl(statusEl, "Filled from the photo — double-check the numbers.");
+    }
+  }
+
   /* ---------- Helpers ---------- */
 
   function onlyDigits(s) { return String(s).replace(/\D/g, ""); }
@@ -290,6 +404,7 @@
     return s;
   }
   function setStatus(msg) { els.status.textContent = msg; }
+  function setEl(el, msg) { if (el) el.textContent = msg; }
 
   function resetToScan() {
     current = { name: null, style: null, upc: null, colorway: null };
@@ -298,6 +413,7 @@
     els.price.value = "";
     els.manualUpc.value = "";
     els.manualStyle.value = "";
+    setEl(els.ocrStatus, "");
     els.verdict.hidden = true;
     els.resultCard.hidden = true;
     els.scanCard.hidden = false;
@@ -324,6 +440,24 @@
     } else {
       setStatus("Type a barcode number or a style code first.");
     }
+  });
+
+  // OCR: one hidden file input, reused by both entry points.
+  let ocrMode = "identify";
+  els.photoBtn.addEventListener("click", () => {
+    stopScan();
+    ocrMode = "identify";
+    els.ocrInput.value = "";
+    els.ocrInput.click();
+  });
+  els.ocrFillBtn.addEventListener("click", () => {
+    ocrMode = "fill";
+    els.ocrInput.value = "";
+    els.ocrInput.click();
+  });
+  els.ocrInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) runOcr(file, ocrMode);
   });
 
   els.helpBtn.addEventListener("click", () => els.helpDialog.showModal());
