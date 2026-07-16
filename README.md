@@ -8,8 +8,13 @@ uploaded. Just static files you host anywhere with HTTPS.
 
 ## What it does
 
-1. **Scan** the UPC barcode or QR code on the box with your camera.
-   Decoding runs on-device via [ZXing](https://github.com/zxing-js/library).
+1. **Scan** the box with your camera. It **continuously captures** in the
+   background — reading the **UPC/QR barcode** (via
+   [ZXing](https://github.com/zxing-js/library)) *and* OCR-reading the
+   **price sticker** at the same time — and shows a live **UPC ✓ / Price ✓**
+   readout as each is found. When it has both, it jumps to the result
+   automatically; you can also tap **Use what I've got** at any point. All
+   on-device.
 2. **Identifies** the shoe from a small built-in catalog (name + MSRP), or
    falls back to showing the raw style/UPC for unknown shoes.
 3. **Discount check** — enter the in-store sticker price (or tap **📷

@@ -203,6 +203,18 @@
       border: 1px solid var(--border);
     }
     .dbg-row { display: flex; gap: 10px; margin-top: 10px; }
+    .capture-status { display: flex; gap: 10px; margin-top: 12px; }
+    .cap-chip {
+      flex: 1; display: flex; align-items: center; gap: 8px;
+      padding: 11px 12px; border-radius: 12px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      font-size: 13px; font-weight: 600; color: var(--muted);
+    }
+    .cap-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
+    .cap-chip b { color: var(--muted); font-weight: 700; }
+    .cap-chip.found { border-color: var(--good); color: var(--text); }
+    .cap-chip.found .dot { background: var(--good); }
+    .cap-chip.found b { color: var(--text); }
   </style>
 </head>
 <body>
@@ -231,6 +243,11 @@
         <button id="scanBtn" class="primary-btn">Start camera</button>
         <button id="stopBtn" class="secondary-btn" hidden>Stop</button>
       </div>
+      <div id="captureStatus" class="capture-status" hidden>
+        <div class="cap-chip" id="capUpc"><span class="dot"></span> UPC <b>…</b></div>
+        <div class="cap-chip" id="capPrice"><span class="dot"></span> Price <b>…</b></div>
+      </div>
+      <button id="useBtn" class="secondary-btn wide" hidden>Use what I've got →</button>
       <button id="photoBtn" class="secondary-btn wide">📷 Read a photo instead</button>
       <p id="scanStatus" class="scan-status" aria-live="polite"></p>
       <details class="manual">
@@ -352,12 +369,15 @@
       manualUpc: $("manualUpc"), manualStyle: $("manualStyle"), manualBtn: $("manualBtn"),
       helpBtn: $("helpBtn"), helpDialog: $("helpDialog"), helpClose: $("helpClose"),
       photoBtn: $("photoBtn"), ocrFillBtn: $("ocrFillBtn"), ocrInput: $("ocrInput"), ocrStatus: $("ocrStatus"),
+      captureStatus: $("captureStatus"), capUpc: $("capUpc"), capPrice: $("capPrice"), useBtn: $("useBtn"),
     };
 
     const CATALOG = window.SHOE_CATALOG || { byUpc: {}, byStyle: {} };
     let reader = null;
     let running = false;
     let current = { name: null, style: null, upc: null, colorway: null };
+    // What the live loop has captured so far this session.
+    let captured = { upc: null, style: null, price: null, msrp: null };
 
     /* ---------- On-screen debug log ---------- */
     const DBG_MAX = 400;
@@ -408,6 +428,10 @@
       els.scanBtn.hidden = true;
       els.stopBtn.hidden = false;
       frames = 0; hits = 0; seenErrs.clear();
+      captured = { upc: null, style: null, price: null, msrp: null };
+      els.captureStatus.hidden = false;
+      els.useBtn.hidden = true;
+      updateChips();
       dbg("startScan tapped");
       try {
         reader = reader || makeReader();
@@ -427,7 +451,7 @@
           if (result) {
             hits++;
             dbg("DECODED [" + result.getBarcodeFormat() + "] " + result.getText());
-            handleScan(result.getText(), result.getBarcodeFormat());
+            onLiveCode(result.getText(), result.getBarcodeFormat());
           } else if (err) {
             const nm = err.name || (err.constructor && err.constructor.name) || "err";
             // NotFoundException fires every empty frame — that's normal, log it once.
@@ -451,7 +475,8 @@
         running = true;
         els.placeholder.hidden = true;
         els.reticle.hidden = false;
-        setStatus("Point at the barcode or QR code…");
+        setStatus("Scanning… move slowly over the barcode, then the price sticker.");
+        startOcrLoop();
         setTimeout(() => {
           try {
             const so = els.video.srcObject;
@@ -480,6 +505,7 @@
 
     function stopScan() {
       running = false;
+      stopOcrLoop();
       try { if (reader) reader.reset(); } catch (_) {}
       els.scanBtn.hidden = false;
       els.stopBtn.hidden = true;
@@ -536,6 +562,143 @@
       }
       await runOcr(file, gotId ? "fill" : "identify");
     }
+
+    /* ---------- Continuous dual capture (UPC + price) ---------- */
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function onLiveCode(text, format) {
+      const fmt = String(format || "");
+      if (fmt.includes("QR")) {
+        const m = text.match(/\b([A-Z]{2}\d{4}|\d{6})[-\s]?(\d{3})\b/);
+        if (m) setCapturedStyle(m[1] + m[2]);
+        if (/^https?:\/\//i.test(text)) current.qrUrl = text;
+      } else {
+        setCapturedUpc(onlyDigits(text));
+      }
+    }
+
+    function setCapturedUpc(upc) {
+      if (!upc || upc.length < 8 || captured.upc === upc) return;
+      captured.upc = upc;
+      if (navigator.vibrate) navigator.vibrate(30);
+      dbg("captured UPC " + upc);
+      updateChips();
+      maybeFinish();
+    }
+
+    function setCapturedStyle(styleDigits) {
+      const key = onlyAlnum(styleDigits).toUpperCase();
+      if (!key || captured.style === key) return;
+      captured.style = key;
+      dbg("captured style " + key);
+      updateChips();
+      maybeFinish();
+    }
+
+    // Parse an OCR frame for a printed style code and the sticker prices.
+    function ingestOcrText(text) {
+      const up = (text || "").toUpperCase();
+      const sm = up.match(/\b(\d{6})[-\s]?(\d{3})\b/);
+      if (sm && !captured.style) setCapturedStyle(sm[1] + sm[2]);
+
+      let msrp = nearestPrice(up, "WAS");
+      if (msrp == null) msrp = nearestPrice(up, "RETAIL");
+      if (msrp == null) msrp = nearestPrice(up, "SUGG");
+      let now = nearestPrice(up, "NOW");
+      if (now == null) now = nearestPrice(up, "OUR");
+
+      const all = priceList(up);
+      let price = now, m = msrp;
+      if (all.length === 1) {
+        if (price == null) price = all[0];
+        if (m === all[0] && price === all[0]) m = null;
+      } else if (all.length >= 2) {
+        const uniq = [...new Set(all)].sort((a, b) => b - a);
+        if (m == null) m = uniq[0];
+        if (price == null) price = uniq[uniq.length - 1];
+      }
+      if (price != null && captured.price == null) {
+        captured.price = price;
+        if (m != null) captured.msrp = m;
+        if (navigator.vibrate) navigator.vibrate(30);
+        dbg("captured price " + price + (m != null ? " / msrp " + m : ""));
+        updateChips();
+        maybeFinish();
+      }
+    }
+
+    function setChip(el, ok, txt) {
+      el.classList.toggle("found", ok);
+      el.querySelector("b").textContent = txt;
+    }
+
+    function updateChips() {
+      const upcOk = !!(captured.upc || captured.style);
+      setChip(els.capUpc, upcOk, upcOk ? (captured.upc || prettyStyle(captured.style)) : "scanning…");
+      const priceOk = captured.price != null;
+      setChip(els.capPrice, priceOk, priceOk ? ("$" + captured.price.toFixed(2)) : "scanning…");
+      els.useBtn.hidden = !(upcOk || priceOk);
+    }
+
+    function maybeFinish() {
+      if ((captured.upc || captured.style) && captured.price != null) finalizeCapture();
+    }
+
+    function finalizeCapture() {
+      stopScan();
+      let shoe = null;
+      if (captured.upc && CATALOG.byUpc[captured.upc]) shoe = CATALOG.byUpc[captured.upc];
+      else if (captured.style && CATALOG.byStyle[captured.style]) shoe = CATALOG.byStyle[captured.style];
+
+      current.upc = captured.upc || current.upc;
+      if (captured.style) current.style = captured.style;
+
+      showResult(
+        shoe || { name: null, style: captured.style ? prettyStyle(captured.style) : null },
+        shoe ? "Matched" : (captured.upc ? "Scanned" : "Read")
+      );
+      if (captured.msrp != null && !els.msrp.value) els.msrp.value = captured.msrp.toFixed(2);
+      if (captured.price != null) els.price.value = captured.price.toFixed(2);
+      buildCompLinks();
+      updateVerdict();
+    }
+
+    // Background loop: OCR the current video frame until a price is found.
+    let ocrWorker = null;
+    let ocrLoopOn = false;
+    async function startOcrLoop() {
+      if (ocrLoopOn) return;
+      try {
+        dbg("OCR loop: loading reader…");
+        await loadTesseract();
+        if (!ocrWorker) ocrWorker = await window.Tesseract.createWorker("eng", 1);
+        ocrLoopOn = true;
+        dbg("OCR loop started");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        while (ocrLoopOn && running) {
+          if (captured.price == null && els.video.videoWidth) {
+            const vw = els.video.videoWidth, vh = els.video.videoHeight;
+            const maxW = 1280;
+            let cw = vw, ch = vh;
+            if (vw > maxW) { const k = maxW / vw; cw = Math.round(vw * k); ch = Math.round(vh * k); }
+            canvas.width = cw; canvas.height = ch;
+            ctx.drawImage(els.video, 0, 0, cw, ch);
+            try {
+              const { data } = await ocrWorker.recognize(canvas);
+              ingestOcrText(data && data.text || "");
+            } catch (e) { dbg("OCR frame err: " + (e.message || e)); }
+          }
+          await sleep(captured.price == null ? 250 : 1500);
+        }
+        dbg("OCR loop stopped");
+      } catch (e) {
+        ocrLoopOn = false;
+        dbg("OCR loop failed to start: " + (e.message || e));
+      }
+    }
+    function stopOcrLoop() { ocrLoopOn = false; }
 
     /* ---------- Identify ---------- */
 
@@ -766,6 +929,7 @@
 
     function resetToScan() {
       current = { name: null, style: null, upc: null, colorway: null };
+      captured = { upc: null, style: null, price: null, msrp: null };
       lastValue = null;
       els.msrp.value = ""; els.price.value = "";
       els.manualUpc.value = ""; els.manualStyle.value = "";
@@ -773,6 +937,10 @@
       els.verdict.hidden = true;
       els.resultCard.hidden = true;
       els.scanCard.hidden = false;
+      els.captureStatus.hidden = true;
+      els.useBtn.hidden = true;
+      setChip(els.capUpc, false, "…");
+      setChip(els.capPrice, false, "…");
       setStatus("");
       if (isSavedFile) showSavedFileHint();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -782,6 +950,7 @@
 
     els.scanBtn.addEventListener("click", startScan);
     els.stopBtn.addEventListener("click", () => { stopScan(); setStatus(""); });
+    els.useBtn.addEventListener("click", finalizeCapture);
     els.scanAgain.addEventListener("click", resetToScan);
     els.msrp.addEventListener("input", updateVerdict);
     els.price.addEventListener("input", updateVerdict);
