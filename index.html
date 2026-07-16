@@ -45,6 +45,14 @@
       border-radius:50%; pointer-events:none; box-shadow:0 0 0 2px rgba(0,0,0,.45); animation:tapPulse 1s ease-out infinite; }
     @keyframes tapPulse { 0%{transform:scale(.7);opacity:1} 100%{transform:scale(1.25);opacity:.35} }
     #video { cursor:crosshair; }
+    .price-box { position:absolute; left:14%; right:14%; top:40%; height:20%; border:2px dashed var(--accent-2);
+      border-radius:10px; pointer-events:none; display:flex; align-items:flex-start; justify-content:center; }
+    .price-box b { transform:translateY(-130%); background:var(--accent-2); color:#000; font-size:11px;
+      font-weight:800; padding:2px 8px; border-radius:6px; letter-spacing:.02em; }
+    .price-view { margin-top:12px; padding:10px; border-radius:12px; background:var(--surface-2); border:1px solid var(--border); }
+    .price-view .pv-head { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:8px; }
+    .price-view canvas { width:100%; max-height:120px; object-fit:contain; background:#000; border-radius:8px; display:block; image-rendering:pixelated; }
+    .price-view .pv-vote { margin-top:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
     .reticle span { position:absolute; width:26px; height:26px; border:3px solid var(--accent); }
     .reticle span:nth-child(1){ top:0; left:0; border-right:0; border-bottom:0; border-top-left-radius:8px;}
     .reticle span:nth-child(2){ top:0; right:0; border-left:0; border-bottom:0; border-top-right-radius:8px;}
@@ -130,6 +138,7 @@
       <div class="scan-stage">
         <video id="video" playsinline muted></video>
         <div id="reticle" class="reticle" hidden><span></span><span></span><span></span><span></span></div>
+        <div id="priceBox" class="price-box" hidden><b>put price here</b></div>
         <div id="tapMarker" class="tap-marker" hidden></div>
         <div id="scanPlaceholder" class="scan-placeholder">
           <div class="scan-icon">📷</div>
@@ -145,6 +154,12 @@
       <div id="captureStatus" class="capture-status" hidden>
         <div class="cap-chip" id="chipName"><span class="dot"></span> Name <b>…</b></div>
         <div class="cap-chip" id="chipPrice"><span class="dot"></span> Price <b>…</b></div>
+      </div>
+
+      <div id="priceView" class="price-view" hidden>
+        <div class="pv-head"><span>👁️ What the price reader sees</span><span id="pvSharp"></span></div>
+        <canvas id="priceViewCanvas"></canvas>
+        <div class="pv-vote" id="pvVote">Point the price sticker into the dashed box.</div>
       </div>
 
       <div id="savePrompt" class="save-prompt" hidden>
@@ -202,7 +217,7 @@
     <ol>
       <li>Point the camera so the shoe's <strong>label fills the frame</strong> — name, size box, and the price sticker.</li>
       <li>It reads the <strong>model name</strong> on the fly (hold steady a second — the Name chip goes green).</li>
-      <li>For the price, <strong>tap the price on the sticker</strong> and hold steady — it OCRs that spot across many frames and votes out the misreads (tag-gun fonts are noisy, so it needs a few looks). Two prices → the lower one is used. Can't get it? Type it. Then it saves and you're on to the next box.</li>
+      <li>For the price, <strong>line the sticker up in the dashed box</strong> and hold steady. The preview shows exactly what it's reading; it OCRs across many frames, skips blurry ones, and votes out the tag-gun misreads. Two prices → the lower one is used. Can't get it? Type it. Then it saves and you're on to the next box.</li>
       <li>Each saved box shows the discount and <strong>StockX / GOAT / eBay-sold</strong> links — the real "good deal?" answer.</li>
     </ol>
     <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Live camera needs an https:// page.</p>
@@ -220,6 +235,7 @@
     const $ = (id) => document.getElementById(id);
     const els = {
       video:$("video"), reticle:$("reticle"), placeholder:$("scanPlaceholder"), tapMarker:$("tapMarker"),
+      priceBox:$("priceBox"), priceView:$("priceView"), priceViewCanvas:$("priceViewCanvas"), pvSharp:$("pvSharp"), pvVote:$("pvVote"),
       startBtn:$("startBtn"), stopBtn:$("stopBtn"), photoBtn:$("photoBtn"), ocrInput:$("ocrInput"),
       status:$("scanStatus"), chipName:$("chipName"), chipPrice:$("chipPrice"), captureStatus:$("captureStatus"),
       savePrompt:$("savePrompt"), promptName:$("promptName"), promptPrice:$("promptPrice"),
@@ -326,6 +342,8 @@
         stream=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080} } });
         els.video.srcObject=stream; await els.video.play();
         running=true; els.placeholder.hidden=true; els.reticle.hidden=false; els.captureStatus.hidden=false;
+        priceRegion={...PRICE_REGION_DEFAULT}; els.priceBox.hidden=false; els.priceView.hidden=false;
+        getPriceWorker();  // warm up the legacy engine now
         const tr=stream.getVideoTracks()[0], s=tr&&tr.getSettings?tr.getSettings():{};
         dbg("camera on: "+(s.width||"?")+"x"+(s.height||"?")+" facing="+(s.facingMode||"?"));
         updateChips();
@@ -344,6 +362,7 @@
       if(graceTimer){ clearTimeout(graceTimer); graceTimer=null; }
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
       els.startBtn.hidden=false; els.stopBtn.hidden=true; els.reticle.hidden=true; els.placeholder.hidden=false;
+      els.priceBox.hidden=true; els.priceView.hidden=true; els.tapMarker.hidden=true;
     }
 
     // Crop the framed label region, upscale, grayscale + contrast so small print resolves.
@@ -379,6 +398,8 @@
       return priceWorkerLoading;
     }
 
+    // Centered price box (matches the on-screen dashed guide) — no tap needed.
+    const PRICE_REGION_DEFAULT={ cx:0.5, cy:0.5, hw:0.36, hh:0.10 };
     let priceRegion=null;                 // {cx,cy,hw,hh} normalized to video intrinsic
     let priceVotes=new Map(), priceFrames=0;
     const priceCanvas=document.createElement("canvas");
@@ -393,6 +414,18 @@
       return { x:Math.min(1,Math.max(0,x)), y:Math.min(1,Math.max(0,y)) };
     }
 
+    let lastSharp=0;
+    // Laplacian-variance sharpness (from the form validator's blur gate) — reject
+    // motion-blurred frames so OCR only ever sees crisp digits.
+    function sharpnessOf(data,cw,ch){
+      let sum=0,sum2=0,n=0;
+      for(let y=1;y<ch-1;y+=2){ for(let x=1;x<cw-1;x+=2){
+        const i=(y*cw+x)*4, up=((y-1)*cw+x)*4, dn=((y+1)*cw+x)*4, lf=(y*cw+x-1)*4, rt=(y*cw+x+1)*4;
+        const lap=4*data[i]-data[up]-data[dn]-data[lf]-data[rt];
+        sum+=lap; sum2+=lap*lap; n++;
+      }}
+      if(!n) return 0; const mean=sum/n; return sum2/n-mean*mean;
+    }
     function grabPriceRegion(){
       const v=els.video, vw=v.videoWidth, vh=v.videoHeight; if(!vw||!priceRegion) return null;
       let sx=Math.round((priceRegion.cx-priceRegion.hw)*vw), sy=Math.round((priceRegion.cy-priceRegion.hh)*vh);
@@ -408,9 +441,14 @@
         const rng=Math.max(1,mx-mn);
         for(let i=0;i<d.length;i+=4){ let g=(d[i]-mn)*255/rng; d[i]=d[i+1]=d[i+2]=(g<0?0:g>255?255:g); }
         ctx.putImageData(img,0,0);
-      }catch(_){}
+        lastSharp=sharpnessOf(d,cw,ch);
+      }catch(_){ lastSharp=0; }
+      // Show the user EXACTLY what the OCR is reading.
+      const pv=els.priceViewCanvas; pv.width=cw; pv.height=ch; pv.getContext("2d").drawImage(priceCanvas,0,0);
+      els.pvSharp.textContent = "sharpness "+Math.round(lastSharp)+(lastSharp<SHARP_MIN?" · blurry":" · ok");
       return priceCanvas;
     }
+    const SHARP_MIN=140;   // below this the crop is too blurry to trust
 
     // Turn one OCR frame of the tapped region into price candidates and vote.
     function votePrice(data){
@@ -426,6 +464,11 @@
       }
       priceFrames++;
       for(const v of fc) priceVotes.set(v,(priceVotes.get(v)||0)+1);
+      const ranked=[...priceVotes].sort((a,b)=>b[1]-a[1]);
+      // Live vote readout so the user sees it converging.
+      els.pvVote.textContent = ranked.length
+        ? "reads: "+ranked.slice(0,4).map(([p,c])=>"$"+p+"×"+c).join("  ")
+        : "no price yet — is the whole sticker in the box?";
       const strong=[...priceVotes].filter(([,c])=>c>=3).map(([p])=>p).sort((a,b)=>a-b);
       if(strong.length){
         cap.price=strong[0];                               // lower price = current
@@ -435,8 +478,6 @@
         els.tapMarker.hidden=true;
         updateChips();
         if(cap.name) saveBox("vote");
-      } else if(priceFrames%4===0){
-        setStatus("Reading price… hold steady on the sticker ("+priceFrames+" looks).");
       }
     }
 
@@ -461,18 +502,21 @@
       try{
         setStatus("Loading text reader…"); dbg("OCR loop: loading");
         await getWorker(); ocrLoopOn=true; dbg("OCR loop started");
-        setStatus("Scanning… fill the frame with the label to read the name.");
+        setStatus("Scanning… show the label for the name, and the price sticker in the dashed box.");
         while(ocrLoopOn && running){
           // Name pass (LSTM) until we have it.
           if(!cap.name && els.video.videoWidth){
             const cv=grabOcrFrame();
             if(cv){ try{ const {data}=await ocrWorker.recognize(cv); ingest(data&&data.text||""); }catch(e){ dbg("OCR frame err: "+(e.message||e)); } }
           }
-          // Price pass (legacy) — only once the user has tapped the sticker.
+          // Price pass (legacy) — auto-scans the centered price box.
           if(cap.price==null && priceRegion && els.video.videoWidth){
-            try{ const w=await getPriceWorker(); const cv=grabPriceRegion();
-              if(cv){ const {data}=await w.recognize(cv); votePrice(data); }
-            }catch(e){ dbg("price OCR err: "+(e.message||e)); }
+            const cv=grabPriceRegion();
+            if(cv){
+              if(lastSharp<SHARP_MIN){ els.pvVote.textContent="Too blurry — hold steady on the sticker."; }
+              else { try{ const w=await getPriceWorker(); const {data}=await w.recognize(cv); votePrice(data); }
+                catch(e){ dbg("price OCR err: "+(e.message||e)); } }
+            }
           }
           await sleep(cap.name && priceRegion ? 200 : 280);
         }
@@ -533,9 +577,10 @@
       // Name's in — steer to tapping the price; after a few seconds, offer the
       // type-it fallback in case the sticker won't vote through.
       if(cap.name && cap.price==null){
-        if(!priceRegion && !promptShown) setStatus("Name ✓ — tap the price on the sticker to read it.");
+        if(!promptShown) setStatus("Name ✓ — line the price sticker up in the dashed box.");
+        // Longer fallback: give the auto-reader time; then offer to type it.
         if(!promptShown && !graceTimer){
-          graceTimer=setTimeout(()=>{ graceTimer=null; if(running && cap.name && cap.price==null) showPricePrompt(); }, 4000);
+          graceTimer=setTimeout(()=>{ graceTimer=null; if(running && cap.name && cap.price==null) showPricePrompt(); }, 9000);
         }
       }
     }
@@ -566,8 +611,8 @@
     function resetCapture(){
       cap={ name:null, price:null, msrp:null };
       nameCands=[]; priceCands=[]; promptShown=false;
-      priceRegion=null; priceVotes.clear(); priceFrames=0;
-      els.tapMarker.hidden=true;
+      priceRegion=running?{...PRICE_REGION_DEFAULT}:null; priceVotes.clear(); priceFrames=0;
+      els.tapMarker.hidden=true; els.pvVote.textContent="Point the price sticker into the dashed box.";
       if(graceTimer){ clearTimeout(graceTimer); graceTimer=null; }
       els.savePrompt.hidden=true;
       updateChips();
