@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kicks Check" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <title>Kicks Check — Is this shoe a good price?</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">👟</span>
+      <span class="brand-name">Kicks Check</span>
+    </div>
+    <button id="helpBtn" class="ghost-btn" aria-label="How it works">?</button>
+  </header>
+
+  <main class="app">
+    <!-- SCANNER -->
+    <section id="scanCard" class="card">
+      <div class="scan-stage">
+        <video id="video" playsinline muted></video>
+        <div id="reticle" class="reticle" hidden>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div id="scanPlaceholder" class="scan-placeholder">
+          <div class="scan-icon">📷</div>
+          <p>Scan the barcode or QR code on the shoe box</p>
+        </div>
+      </div>
+      <div class="scan-controls">
+        <button id="scanBtn" class="primary-btn">Start camera</button>
+        <button id="stopBtn" class="secondary-btn" hidden>Stop</button>
+      </div>
+      <p id="scanStatus" class="scan-status" aria-live="polite"></p>
+      <details class="manual">
+        <summary>Camera won't work? Enter it by hand</summary>
+        <div class="manual-body">
+          <label>UPC / barcode number
+            <input id="manualUpc" inputmode="numeric" placeholder="e.g. 193151456335" />
+          </label>
+          <label>Style code (optional)
+            <input id="manualStyle" placeholder="e.g. 487754-012" />
+          </label>
+          <button id="manualBtn" class="secondary-btn">Look it up</button>
+        </div>
+      </details>
+    </section>
+
+    <!-- RESULT -->
+    <section id="resultCard" class="card result" hidden>
+      <div class="result-head">
+        <div>
+          <h2 id="shoeName">Unknown shoe</h2>
+          <p id="shoeMeta" class="muted"></p>
+        </div>
+        <span id="idBadge" class="badge">Scanned</span>
+      </div>
+
+      <div class="price-grid">
+        <label class="price-field">
+          <span>MSRP (retail)</span>
+          <div class="input-money"><i>$</i><input id="msrpInput" inputmode="decimal" placeholder="90.00" /></div>
+        </label>
+        <label class="price-field">
+          <span>Sticker price</span>
+          <div class="input-money"><i>$</i><input id="priceInput" inputmode="decimal" placeholder="69.99" /></div>
+        </label>
+      </div>
+
+      <div id="verdict" class="verdict" hidden>
+        <div class="verdict-score">
+          <span id="verdictEmoji">🤔</span>
+          <div>
+            <strong id="verdictLabel">—</strong>
+            <span id="verdictSub" class="muted"></span>
+          </div>
+        </div>
+        <div class="discount-bar">
+          <div id="discountFill" class="discount-fill"></div>
+        </div>
+        <p id="verdictNote" class="verdict-note muted"></p>
+      </div>
+
+      <div class="comps">
+        <p class="comps-title">Check the real resale value 👇</p>
+        <div id="compLinks" class="comp-links"></div>
+        <p class="fine muted">Sold-listing prices are the honest answer to "good deal?" — the box only tells you MSRP.</p>
+      </div>
+
+      <button id="scanAgainBtn" class="secondary-btn wide">Scan another box</button>
+    </section>
+  </main>
+
+  <dialog id="helpDialog" class="help">
+    <h3>How it works</h3>
+    <ol>
+      <li><strong>Scan</strong> the barcode (UPC) or QR code on the box. That identifies the exact shoe.</li>
+      <li>The app fills in the <strong>MSRP</strong> if it knows the shoe. Type the <strong>sticker price</strong> you see in-store.</li>
+      <li>You get a discount % vs MSRP — a quick sanity check, not the whole story.</li>
+      <li>Tap the <strong>StockX / GOAT / eBay sold</strong> links to see what the shoe actually resells for. That's the real "good deal?" answer.</li>
+    </ol>
+    <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Camera needs an https:// page (GitHub Pages works).</p>
+    <button id="helpClose" class="primary-btn">Got it</button>
+  </dialog>
+
+  <footer class="foot muted fine">Runs entirely on your device · no accounts, no tracking</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+  <script src="catalog.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
