@@ -1,33 +1,35 @@
 # 👟 Kicks Check
 
-A single-page web app for your iPhone that scans a shoe box's barcode/QR code,
-identifies the shoe, and helps you decide whether the price is a good deal.
+A single-page web app for your iPhone that reads a shoe box's **label and price
+sticker with your camera** and helps you decide whether the price is a good deal
+— then saves each box to a running list so you can work down a whole shelf.
 
 It's **100% client-side** — no server, no accounts, no API keys, nothing
 uploaded. Just static files you host anywhere with HTTPS.
 
+> **No barcodes.** The barcode only encodes a UPC — it has no price, and you'd
+> need a catalog to turn it into a name. Since the app OCRs the name *and* the
+> price off the label anyway, the barcode was dead weight, so it's gone. Pure
+> OCR ([Tesseract.js](https://github.com/naptha/tesseract.js)).
+
 ## What it does
 
-1. **Scan** the box with your camera. It **continuously captures** in the
-   background — reading the **UPC/QR barcode** (via
-   [ZXing](https://github.com/zxing-js/library)) *and* OCR-reading the
-   **price sticker** at the same time — and shows a live **UPC ✓ / Price ✓**
-   readout as each is found. When it has both, it jumps to the result
-   automatically; you can also tap **Use what I've got** at any point. All
-   on-device.
-2. **Identifies** the shoe by **reading the model name off the label with OCR**
-   ([Tesseract.js](https://github.com/naptha/tesseract.js)) — so it works for
-   *any* box, not just ones in the tiny built-in catalog. If the barcode
-   happens to match the catalog it also fills the official MSRP. It never
-   stops on a useless "unknown shoe" screen: it keeps re-reading until it has a
-   real name, then shows that (plus the style code / UPC it read).
-3. **Discount check** — the store sticker's "WAS" price *is* the MSRP, so for
-   sale stickers it can fill both numbers itself. Otherwise type the sticker
-   price (or tap **📷 Auto-fill from a sticker photo** for a tight, reliable
-   read). Then it shows the percentage off MSRP with a plain-English verdict.
-4. **Real resale comps** — one-tap links to **eBay sold listings, StockX,
-   GOAT, and Google Shopping** for the exact model. This is the honest answer
-   to "is it a good price?", because the box only knows MSRP, not resale value.
+1. **Point** the camera so the box's **label fills the frame** (name + size box
+   + price sticker). It reads on the fly and shows two ✓ chips — **Name** and
+   **Price** — filling in as it captures each.
+2. **Keeps trying until it's sure.** The name is only confirmed once its words
+   **recur across several frames** (this scrubs OCR noise like `ee NIKE COURT
+   ROYALE SUGE TAR` down to `NIKE COURT ROYALE`); a price is only accepted once
+   the **same value reads twice**. Shaky/half reads keep scanning instead of
+   saving garbage — so hold steady on each box for a second.
+3. **Saves the box** once it has a name + price: a **✓ toast** fires and it's
+   added to the list below, then you move to the next box. Can't read the tiny
+   price sticker (common — it's small)? Type it in the prompt, or tap **Save
+   name only**.
+4. **Each saved box** shows the discount vs the "was" price (when read) and
+   one-tap **eBay sold / StockX / GOAT / Google Shopping** links — the honest
+   answer to "good price?", since the box only knows MSRP, not resale value.
+   Every item has an **Edit price** and remove button.
 
 ### Why the resale links matter
 
@@ -38,9 +40,9 @@ the real answer lives.
 
 ## Two ways to run it on your iPhone
 
-The whole app is a **single self-contained `index.html`** (styles, logic, and
-catalog inlined). It still pulls the scanner/OCR libraries from a CDN, so you
-need internet the first time.
+The whole app is a **single self-contained `index.html`** (styles + logic
+inlined). It pulls the OCR library from a CDN, so you need internet the first
+time.
 
 ### Option A — just save the file (no hosting)
 
@@ -48,18 +50,18 @@ need internet the first time.
    save it from the repo).
 2. Open it in **Safari** (Files app → tap the file → Share → open in Safari,
    or "Open in Safari").
-3. Tap **📷 Read a photo** and snap the box label — it decodes the barcode
-   **and** reads the sticker price from one photo.
+3. Tap **📷 Read a photo** and snap the box label — it OCRs the name and price
+   from one photo and saves it to the list.
 
 > **Why photo mode here?** iOS only allows the *live* camera (`getUserMedia`)
 > on a hosted `https://` page — never on a saved `file://` page. The photo
 > path uses the native camera/photo picker, which works from a saved file,
-> so you get the full flow without hosting anything. Option B adds live
-> point-and-scan.
+> so you get the full flow without hosting anything. Option B adds the live,
+> continuous scanning.
 
 ### Option B — host it for live scanning (GitHub Pages)
 
-For live point-at-the-barcode scanning, serve it from a secure origin. The
+For live continuous scanning, serve it from a secure origin. The
 easiest free host is **GitHub Pages**:
 
 1. Push this repo to GitHub.
@@ -78,23 +80,17 @@ python3 -m http.server 8000
 # then open http://localhost:8000 (localhost is treated as secure)
 ```
 
-## Adding more shoes
+## Add a box by hand
 
-Edit the `window.SHOE_CATALOG` block near the bottom of
-[`index.html`](index.html). Each entry is keyed by 12-digit UPC and by style
-code (no dash). Unknown shoes still work — you just confirm the MSRP by hand.
-
-```js
-byUpc: {
-  "193151456335": { name: "Nike Air Tailwind 79", colorway: "Black / White – Team Orange", style: "487754-012", msrp: 90 }
-}
-```
+No catalog to maintain — the app reads everything off the label. If the camera
+can't get a box (bad light, torn label), open **"Add a box by hand"** on the
+scan screen and type the name + price; it lands in the same list.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The whole app — markup, styles, scanning/OCR logic, and the shoe catalog, all in one self-contained file |
+| `index.html` | The whole app — markup, styles, camera + OCR logic, and the saved list, all in one self-contained file |
 | `manifest.webmanifest`, `icon.svg` | Add-to-Home-Screen support (used when hosted) |
 
 ## Limitations
@@ -106,9 +102,10 @@ byUpc: {
   use it. **Fill the frame with the label** — the app crops, upscales, and
   contrast-boosts that region before reading it; a label that's small in the
   frame won't resolve.
-- Reading the model **name** is reliable; reading the tiny **price sticker**
-  live is hit-or-miss (small text, strikethrough on the "WAS" price). If the
-  price doesn't auto-fill, type it or use **📷 Auto-fill from a sticker photo**
-  for a close-up.
-- The built-in catalog is a starter set; most boxes will scan as "Unknown"
-  until you add them (the app still works, you just confirm the MSRP).
+- Reading the model **name** is reliable when you hold steady (it needs a few
+  agreeing frames); a fast pan won't confirm — that's deliberate, so it never
+  saves a garbled name.
+- Reading the tiny **price sticker** live is hit-or-miss (small text,
+  strikethrough on the "WAS" price). When it can't, you type the price in the
+  prompt — that's expected, not a failure. **📷 Read a photo** (a close-up of
+  the label) often does better than the live feed.

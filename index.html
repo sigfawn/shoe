@@ -13,255 +13,164 @@
   <title>Kicks Check — Is this shoe a good price?</title>
   <style>
     :root {
-      --bg: #0b0b0f;
-      --surface: #16161d;
-      --surface-2: #1f1f29;
-      --border: #2a2a36;
-      --text: #f3f3f5;
-      --muted: #9a9aa8;
-      --accent: #ff5a1f;
-      --accent-2: #ffb020;
-      --good: #2ecc71;
-      --ok: #ffb020;
-      --bad: #ff4d4d;
-      --radius: 18px;
-      --safe-t: env(safe-area-inset-top, 0px);
-      --safe-b: env(safe-area-inset-bottom, 0px);
+      --bg: #0b0b0f; --surface: #16161d; --surface-2: #1f1f29; --border: #2a2a36;
+      --text: #f3f3f5; --muted: #9a9aa8; --accent: #ff5a1f; --accent-2: #ffb020;
+      --good: #2ecc71; --ok: #ffb020; --bad: #ff4d4d; --radius: 18px;
+      --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
     }
     @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f4f4f7;
-        --surface: #ffffff;
-        --surface-2: #f0f0f4;
-        --border: #e3e3ea;
-        --text: #16161d;
-        --muted: #6b6b78;
-      }
+      :root { --bg:#f4f4f7; --surface:#fff; --surface-2:#f0f0f4; --border:#e3e3ea; --text:#16161d; --muted:#6b6b78; }
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-      -webkit-text-size-adjust: 100%;
-    }
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: calc(var(--safe-t) + 14px) 18px 12px;
-      position: sticky;
-      top: 0;
-      background: color-mix(in srgb, var(--bg) 88%, transparent);
-      backdrop-filter: blur(12px);
-      z-index: 5;
-    }
-    .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-    .brand-mark { font-size: 22px; }
-    .brand-name { letter-spacing: -0.02em; }
-    .ghost-btn {
-      width: 34px; height: 34px; border-radius: 50%;
-      border: 1px solid var(--border); background: var(--surface);
-      color: var(--muted); font-size: 16px; font-weight: 700;
-    }
-    .app {
-      max-width: 560px;
-      margin: 0 auto;
-      padding: 8px 16px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-    /* Scanner */
-    .scan-stage {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 3 / 4;
-      max-height: 56vh;
-      background: #000;
-      border-radius: 14px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .scan-placeholder {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 10px; text-align: center; padding: 24px; color: var(--muted);
-    }
-    .scan-icon { font-size: 44px; }
-    .reticle {
-      position: absolute; inset: 14% 10%;
-      border-radius: 12px;
-      pointer-events: none;
-    }
-    .reticle span {
-      position: absolute; width: 26px; height: 26px;
-      border: 3px solid var(--accent);
-    }
+    html, body { margin:0; background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%; }
+    .topbar { display:flex; align-items:center; justify-content:space-between;
+      padding:calc(var(--safe-t) + 14px) 18px 12px; position:sticky; top:0;
+      background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(12px); z-index:5; }
+    .brand { display:flex; align-items:center; gap:8px; font-weight:700; }
+    .brand-mark { font-size:22px; }
+    .brand-name { letter-spacing:-0.02em; }
+    .ghost-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted); font-size:16px; font-weight:700; }
+    .app { max-width:560px; margin:0 auto; padding:8px 16px 40px; display:flex; flex-direction:column; gap:16px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+    .scan-stage { position:relative; width:100%; aspect-ratio:3/4; max-height:56vh; background:#000;
+      border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    #video { width:100%; height:100%; object-fit:cover; display:block; }
+    .scan-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:10px; text-align:center; padding:24px; color:var(--muted); }
+    .scan-icon { font-size:44px; }
+    .reticle { position:absolute; inset:14% 10%; border-radius:12px; pointer-events:none; }
+    .reticle span { position:absolute; width:26px; height:26px; border:3px solid var(--accent); }
     .reticle span:nth-child(1){ top:0; left:0; border-right:0; border-bottom:0; border-top-left-radius:8px;}
     .reticle span:nth-child(2){ top:0; right:0; border-left:0; border-bottom:0; border-top-right-radius:8px;}
     .reticle span:nth-child(3){ bottom:0; left:0; border-right:0; border-top:0; border-bottom-left-radius:8px;}
     .reticle span:nth-child(4){ bottom:0; right:0; border-left:0; border-top:0; border-bottom-right-radius:8px;}
-    .scan-controls { display: flex; gap: 10px; margin-top: 12px; }
-    .scan-status { margin: 10px 2px 0; min-height: 18px; font-size: 13px; color: var(--muted); }
-    button { font-family: inherit; cursor: pointer; border: none; }
-    .primary-btn {
-      flex: 1; padding: 14px; border-radius: 12px;
-      background: linear-gradient(180deg, var(--accent), #e94f16);
-      color: #fff; font-weight: 700; font-size: 16px;
-    }
-    .secondary-btn {
-      padding: 14px 16px; border-radius: 12px;
-      background: var(--surface-2); color: var(--text);
-      border: 1px solid var(--border); font-weight: 600; font-size: 15px;
-    }
-    .secondary-btn.wide { width: 100%; margin-top: 8px; }
-    .primary-btn:active, .secondary-btn:active { transform: scale(0.98); }
-    .manual { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
-    .manual summary { color: var(--muted); font-size: 14px; cursor: pointer; }
-    .manual-body { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-    .manual-body label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
-    .manual-body input {
-      padding: 12px; border-radius: 10px; border: 1px solid var(--border);
-      background: var(--surface-2); color: var(--text); font-size: 16px;
-    }
-    /* Result */
-    .result-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    #shoeName { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
-    #shoeMeta { margin: 4px 0 0; font-size: 13px; }
-    .badge {
-      flex-shrink: 0; padding: 5px 10px; border-radius: 999px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      font-size: 12px; color: var(--muted); font-weight: 600;
-    }
-    .muted { color: var(--muted); }
-    .fine { font-size: 12px; }
-    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-    .price-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
-    .input-money {
-      display: flex; align-items: center; gap: 4px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 0 12px;
-    }
-    .input-money i { color: var(--muted); font-style: normal; font-size: 18px; }
-    .input-money input {
-      border: none; background: transparent; color: var(--text);
-      font-size: 22px; font-weight: 700; padding: 12px 0; width: 100%;
-      outline: none;
-    }
-    .verdict { margin-top: 18px; padding: 16px; border-radius: 14px; background: var(--surface-2); }
-    .verdict-score { display: flex; align-items: center; gap: 12px; }
-    .verdict-score span:first-child { font-size: 34px; line-height: 1; }
-    .verdict-score strong { display: block; font-size: 18px; }
-    .verdict-score .muted { font-size: 13px; }
-    .discount-bar {
-      margin-top: 14px; height: 10px; border-radius: 999px;
-      background: color-mix(in srgb, var(--border) 70%, transparent); overflow: hidden;
-    }
-    .discount-fill { height: 100%; width: 0; border-radius: 999px; transition: width .5s ease, background .3s; }
-    .verdict-note { margin: 12px 0 0; font-size: 13px; }
-    .comps { margin-top: 18px; }
-    .comps-title { font-weight: 700; margin: 0 0 10px; font-size: 15px; }
-    .comp-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .comp-links a {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 13px; border-radius: 12px; text-decoration: none;
-      background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text); font-weight: 600; font-size: 14px;
-    }
-    .comp-links a:active { transform: scale(0.98); }
-    .comp-links a.full { grid-column: 1 / -1; }
-    .comps .fine { margin-top: 12px; }
-    /* Help dialog */
-    .help {
-      border: 1px solid var(--border); border-radius: var(--radius);
-      background: var(--surface); color: var(--text);
-      max-width: 460px; width: calc(100% - 32px); padding: 22px;
-    }
-    .help::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(2px); }
-    .help h3 { margin: 0 0 12px; }
-    .help ol { margin: 0 0 14px; padding-left: 20px; line-height: 1.5; font-size: 14px; }
-    .help li { margin-bottom: 8px; }
-    .help .primary-btn { width: 100%; margin-top: 8px; }
-    .foot { text-align: center; padding: 8px 16px calc(var(--safe-b) + 20px); }
-    .dbg {
-      font-family: ui-monospace, Menlo, Consolas, monospace;
-      font-size: 11px; line-height: 1.45;
-      white-space: pre-wrap; word-break: break-word;
-      max-height: 42vh; overflow: auto; margin: 0;
-      background: #000; color: #7CFC7C; padding: 10px; border-radius: 10px;
-      border: 1px solid var(--border);
-    }
-    .dbg-row { display: flex; gap: 10px; margin-top: 10px; }
-    .capture-status { display: flex; gap: 10px; margin-top: 12px; }
-    .cap-chip {
-      flex: 1; display: flex; align-items: center; gap: 8px;
-      padding: 11px 12px; border-radius: 12px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      font-size: 13px; font-weight: 600; color: var(--muted);
-    }
-    .cap-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
-    .cap-chip b { color: var(--muted); font-weight: 700; }
-    .cap-chip.found { border-color: var(--good); color: var(--text); }
-    .cap-chip.found .dot { background: var(--good); }
-    .cap-chip.found b { color: var(--text); }
+    .scan-controls { display:flex; gap:10px; margin-top:12px; }
+    .scan-status { margin:10px 2px 0; min-height:18px; font-size:13px; color:var(--muted); }
+    button { font-family:inherit; cursor:pointer; border:none; }
+    .primary-btn { flex:1; padding:14px; border-radius:12px; background:linear-gradient(180deg,var(--accent),#e94f16);
+      color:#fff; font-weight:700; font-size:16px; }
+    .secondary-btn { padding:14px 16px; border-radius:12px; background:var(--surface-2); color:var(--text);
+      border:1px solid var(--border); font-weight:600; font-size:15px; }
+    .secondary-btn.wide { width:100%; margin-top:8px; }
+    .primary-btn:active, .secondary-btn:active { transform:scale(0.98); }
+    .capture-status { display:flex; gap:10px; margin-top:12px; }
+    .cap-chip { flex:1; display:flex; align-items:center; gap:8px; padding:11px 12px; border-radius:12px;
+      background:var(--surface-2); border:1px solid var(--border); font-size:13px; font-weight:600; color:var(--muted); min-width:0; }
+    .cap-chip .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .3s; }
+    .cap-chip b { color:var(--muted); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cap-chip.found { border-color:var(--good); color:var(--text); }
+    .cap-chip.found .dot { background:var(--good); }
+    .cap-chip.found b { color:var(--text); }
+    .save-prompt { margin-top:14px; padding:14px; border-radius:14px; background:var(--surface-2); border:1px solid var(--accent-2); }
+    .save-prompt h4 { margin:0 0 4px; font-size:15px; }
+    .save-prompt .sub { margin:0 0 12px; font-size:13px; color:var(--muted); }
+    .prompt-row { display:flex; gap:10px; }
+    .prompt-field { flex:1; display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--muted); }
+    .prompt-field .input-money { display:flex; align-items:center; gap:4px; background:var(--surface);
+      border:1px solid var(--border); border-radius:10px; padding:0 10px; }
+    .prompt-field .input-money i { font-style:normal; color:var(--muted); }
+    .prompt-field input { border:none; background:transparent; color:var(--text); font-size:18px; font-weight:700;
+      padding:11px 0; width:100%; outline:none; }
+    .prompt-actions { display:flex; gap:10px; margin-top:12px; }
+    .manual { margin-top:14px; border-top:1px solid var(--border); padding-top:10px; }
+    .manual summary { color:var(--muted); font-size:14px; cursor:pointer; }
+    .manual-body { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .manual-body label { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted); }
+    .manual-body input { padding:12px; border-radius:10px; border:1px solid var(--border);
+      background:var(--surface-2); color:var(--text); font-size:16px; }
+    /* Saved list */
+    .list-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .list-head h2 { margin:0; font-size:17px; letter-spacing:-0.02em; }
+    .list-head .clear { background:none; border:none; color:var(--muted); font-size:13px; font-weight:600; }
+    #list { display:flex; flex-direction:column; gap:12px; }
+    .item { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; }
+    .item-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .item-head strong { font-size:16px; letter-spacing:-0.01em; }
+    .item .rm { background:none; border:none; color:var(--muted); font-size:16px; padding:2px 6px; }
+    .item-price { margin-top:6px; font-size:14px; font-weight:600; }
+    .item-price .verdict-tag { color:var(--muted); font-weight:600; }
+    .item-links { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+    .item-links a { display:flex; align-items:center; justify-content:center; padding:10px; border-radius:10px;
+      text-decoration:none; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+      font-weight:600; font-size:13px; }
+    .item-links a:active { transform:scale(0.98); }
+    .item-edit { margin-top:10px; }
+    .item-edit button { background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; padding:0; }
+    .muted { color:var(--muted); } .fine { font-size:12px; }
+    .dbg { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; line-height:1.45;
+      white-space:pre-wrap; word-break:break-word; max-height:42vh; overflow:auto; margin:0;
+      background:#000; color:#7CFC7C; padding:10px; border-radius:10px; border:1px solid var(--border); }
+    .dbg-row { display:flex; gap:10px; margin-top:10px; }
+    .help { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);
+      max-width:460px; width:calc(100% - 32px); padding:22px; }
+    .help::backdrop { background:rgba(0,0,0,.6); backdrop-filter:blur(2px); }
+    .help h3 { margin:0 0 12px; } .help ol { margin:0 0 14px; padding-left:20px; line-height:1.5; font-size:14px; }
+    .help li { margin-bottom:8px; } .help .primary-btn { width:100%; margin-top:8px; }
+    .toast { position:fixed; left:50%; bottom:calc(var(--safe-b) + 22px); transform:translateX(-50%) translateY(20px);
+      background:var(--good); color:#04210f; font-weight:700; font-size:14px; padding:12px 18px; border-radius:999px;
+      opacity:0; transition:opacity .2s, transform .2s; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,.3); pointer-events:none; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .foot { text-align:center; padding:8px 16px calc(var(--safe-b) + 20px); }
   </style>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">👟</span>
-      <span class="brand-name">Kicks Check</span>
-    </div>
+    <div class="brand"><span class="brand-mark">👟</span><span class="brand-name">Kicks Check</span></div>
     <button id="helpBtn" class="ghost-btn" aria-label="How it works">?</button>
   </header>
 
   <main class="app">
-    <!-- SCANNER -->
     <section id="scanCard" class="card">
       <div class="scan-stage">
         <video id="video" playsinline muted></video>
-        <div id="reticle" class="reticle" hidden>
-          <span></span><span></span><span></span><span></span>
-        </div>
+        <div id="reticle" class="reticle" hidden><span></span><span></span><span></span><span></span></div>
         <div id="scanPlaceholder" class="scan-placeholder">
           <div class="scan-icon">📷</div>
-          <p>Fill the box with the shoe's label — it reads the name, barcode, and price sticker</p>
+          <p>Fill the frame with the shoe's label and price sticker — it reads the name and price, no barcode needed</p>
         </div>
       </div>
       <div class="scan-controls">
-        <button id="scanBtn" class="primary-btn">Start camera</button>
+        <button id="startBtn" class="primary-btn">Start camera</button>
         <button id="stopBtn" class="secondary-btn" hidden>Stop</button>
       </div>
-      <div id="captureStatus" class="capture-status" hidden>
-        <div class="cap-chip" id="capUpc"><span class="dot"></span> Shoe <b>…</b></div>
-        <div class="cap-chip" id="capPrice"><span class="dot"></span> Price <b>…</b></div>
-      </div>
-      <button id="useBtn" class="secondary-btn wide" hidden>Use what I've got →</button>
       <button id="photoBtn" class="secondary-btn wide">📷 Read a photo instead</button>
+
+      <div id="captureStatus" class="capture-status" hidden>
+        <div class="cap-chip" id="chipName"><span class="dot"></span> Name <b>…</b></div>
+        <div class="cap-chip" id="chipPrice"><span class="dot"></span> Price <b>…</b></div>
+      </div>
+
+      <div id="savePrompt" class="save-prompt" hidden>
+        <h4 id="promptName">—</h4>
+        <p class="sub">Got the name, but couldn't read the price. Type it (or hold the sticker closer and it'll keep trying).</p>
+        <div class="prompt-row">
+          <label class="prompt-field">Sticker price
+            <div class="input-money"><i>$</i><input id="promptPrice" inputmode="decimal" placeholder="0.00" /></div>
+          </label>
+          <label class="prompt-field">Retail / “was” (optional)
+            <div class="input-money"><i>$</i><input id="promptMsrp" inputmode="decimal" placeholder="0.00" /></div>
+          </label>
+        </div>
+        <div class="prompt-actions">
+          <button id="promptSave" class="primary-btn">Save box</button>
+          <button id="promptSkip" class="secondary-btn">Save name only</button>
+        </div>
+      </div>
+
       <p id="scanStatus" class="scan-status" aria-live="polite"></p>
+
       <details class="manual">
-        <summary>Camera won't work? Enter it by hand</summary>
+        <summary>Add a box by hand</summary>
         <div class="manual-body">
-          <label>UPC / barcode number
-            <input id="manualUpc" inputmode="numeric" placeholder="e.g. 193151456335" />
-          </label>
-          <label>Style code (optional)
-            <input id="manualStyle" placeholder="e.g. 487754-012" />
-          </label>
-          <button id="manualBtn" class="secondary-btn">Look it up</button>
+          <label>Shoe name <input id="manName" placeholder="e.g. Nike Court Royale" /></label>
+          <label>Sticker price <input id="manPrice" inputmode="decimal" placeholder="e.g. 49.99" /></label>
+          <label>Retail / “was” (optional) <input id="manMsrp" inputmode="decimal" placeholder="e.g. 60.00" /></label>
+          <button id="manAdd" class="secondary-btn">Add to list</button>
         </div>
       </details>
+
       <details id="dbgWrap" class="manual">
         <summary>🐞 Debug log</summary>
         <div class="manual-body">
@@ -274,838 +183,398 @@
       </details>
     </section>
 
-    <!-- RESULT -->
-    <section id="resultCard" class="card result" hidden>
-      <div class="result-head">
-        <div>
-          <h2 id="shoeName">Unknown shoe</h2>
-          <p id="shoeMeta" class="muted"></p>
-        </div>
-        <span id="idBadge" class="badge">Scanned</span>
+    <section id="listWrap" class="card" hidden>
+      <div class="list-head">
+        <h2>Saved · <span id="listCount">0</span></h2>
+        <button id="clearList" class="clear">Clear all</button>
       </div>
-
-      <div class="price-grid">
-        <label class="price-field">
-          <span>MSRP (retail)</span>
-          <div class="input-money"><i>$</i><input id="msrpInput" inputmode="decimal" placeholder="0.00" /></div>
-        </label>
-        <label class="price-field">
-          <span>Sticker price</span>
-          <div class="input-money"><i>$</i><input id="priceInput" inputmode="decimal" placeholder="0.00" /></div>
-        </label>
-      </div>
-
-      <button id="ocrFillBtn" class="secondary-btn wide">📷 Auto-fill from a sticker photo</button>
-      <p id="ocrStatus" class="scan-status" aria-live="polite"></p>
-
-      <div id="verdict" class="verdict" hidden>
-        <div class="verdict-score">
-          <span id="verdictEmoji">🤔</span>
-          <div>
-            <strong id="verdictLabel">—</strong>
-            <span id="verdictSub" class="muted"></span>
-          </div>
-        </div>
-        <div class="discount-bar">
-          <div id="discountFill" class="discount-fill"></div>
-        </div>
-        <p id="verdictNote" class="verdict-note muted"></p>
-      </div>
-
-      <div class="comps">
-        <p class="comps-title">Check the real resale value 👇</p>
-        <div id="compLinks" class="comp-links"></div>
-        <p class="fine muted">Sold-listing prices are the honest answer to "good deal?" — the box only tells you MSRP.</p>
-      </div>
-
-      <button id="scanAgainBtn" class="secondary-btn wide">Scan another box</button>
+      <div id="list"></div>
     </section>
   </main>
 
   <dialog id="helpDialog" class="help">
     <h3>How it works</h3>
     <ol>
-      <li><strong>Scan</strong> the barcode (UPC) or QR code on the box. That identifies the exact shoe.</li>
-      <li>The app fills in the <strong>MSRP</strong> if it knows the shoe. Type the <strong>sticker price</strong>, or tap <strong>📷 Auto-fill from a sticker photo</strong> to read it with on-device OCR.</li>
-      <li>You get a discount % vs MSRP — a quick sanity check, not the whole story.</li>
-      <li>Tap the <strong>StockX / GOAT / eBay sold</strong> links to see what the shoe actually resells for. That's the real "good deal?" answer.</li>
+      <li>Point the camera so the shoe's <strong>label fills the frame</strong> — name, size box, and the price sticker.</li>
+      <li>It reads the <strong>model name</strong> and the <strong>sticker price</strong> on the fly. Two ✓ chips show what it has.</li>
+      <li>When it has both, it <strong>saves the box</strong> and you move to the next one. Can't read the price? Type it.</li>
+      <li>Each saved box shows the discount and <strong>StockX / GOAT / eBay-sold</strong> links — the real "good deal?" answer.</li>
     </ol>
-    <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Live camera needs an https:// page; if you opened a saved file, use <strong>📷 Read a photo</strong> instead.</p>
+    <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Live camera needs an https:// page.</p>
     <button id="helpClose" class="primary-btn">Got it</button>
   </dialog>
 
+  <div id="toast" class="toast"></div>
   <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden />
-
   <footer class="foot muted fine">Runs entirely on your device · no accounts, no tracking</footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
   <script>
-    // ---- Built-in catalog: known shoes -> name + MSRP ----
-    // Keyed by 12-digit UPC and by style code (no dash). Add more as you scan.
-    window.SHOE_CATALOG = {
-      byUpc: {
-        "193151456335": { name: "Nike Air Tailwind 79", colorway: "Black / White – Team Orange", style: "487754-012", msrp: 90 },
-      },
-      byStyle: {
-        "487754012": { name: "Nike Air Tailwind 79", colorway: "Black / White – Team Orange", style: "487754-012", msrp: 90 },
-      },
-    };
-  </script>
-  <script>
-  /* Kicks Check — scan a shoe box, judge the price. Pure client-side. */
+  /* Kicks Check — OCR a shoe box (name + price), judge it, save to a list. Pure client-side. */
   (() => {
     "use strict";
-
     const $ = (id) => document.getElementById(id);
     const els = {
-      video: $("video"), reticle: $("reticle"), placeholder: $("scanPlaceholder"),
-      scanBtn: $("scanBtn"), stopBtn: $("stopBtn"), status: $("scanStatus"),
-      resultCard: $("resultCard"), scanCard: $("scanCard"),
-      shoeName: $("shoeName"), shoeMeta: $("shoeMeta"), idBadge: $("idBadge"),
-      msrp: $("msrpInput"), price: $("priceInput"),
-      verdict: $("verdict"), vEmoji: $("verdictEmoji"), vLabel: $("verdictLabel"),
-      vSub: $("verdictSub"), vNote: $("verdictNote"), discountFill: $("discountFill"),
-      compLinks: $("compLinks"), scanAgain: $("scanAgainBtn"),
-      manualUpc: $("manualUpc"), manualStyle: $("manualStyle"), manualBtn: $("manualBtn"),
-      helpBtn: $("helpBtn"), helpDialog: $("helpDialog"), helpClose: $("helpClose"),
-      photoBtn: $("photoBtn"), ocrFillBtn: $("ocrFillBtn"), ocrInput: $("ocrInput"), ocrStatus: $("ocrStatus"),
-      captureStatus: $("captureStatus"), capUpc: $("capUpc"), capPrice: $("capPrice"), useBtn: $("useBtn"),
+      video:$("video"), reticle:$("reticle"), placeholder:$("scanPlaceholder"),
+      startBtn:$("startBtn"), stopBtn:$("stopBtn"), photoBtn:$("photoBtn"), ocrInput:$("ocrInput"),
+      status:$("scanStatus"), chipName:$("chipName"), chipPrice:$("chipPrice"), captureStatus:$("captureStatus"),
+      savePrompt:$("savePrompt"), promptName:$("promptName"), promptPrice:$("promptPrice"),
+      promptMsrp:$("promptMsrp"), promptSave:$("promptSave"), promptSkip:$("promptSkip"),
+      manName:$("manName"), manPrice:$("manPrice"), manMsrp:$("manMsrp"), manAdd:$("manAdd"),
+      listWrap:$("listWrap"), list:$("list"), listCount:$("listCount"), clearList:$("clearList"),
+      dbgLog:$("dbgLog"), dbgCopy:$("dbgCopy"), dbgClear:$("dbgClear"),
+      toast:$("toast"), helpBtn:$("helpBtn"), helpDialog:$("helpDialog"), helpClose:$("helpClose"),
     };
 
-    const CATALOG = window.SHOE_CATALOG || { byUpc: {}, byStyle: {} };
-    let reader = null;
-    let running = false;
-    let current = { name: null, style: null, upc: null, colorway: null };
-    // What the live loop has captured so far this session.
-    let captured = { upc: null, style: null, name: null, colorway: null, price: null, msrp: null };
-    let nameGraceTimer = null;
+    /* ---------- Debug log ---------- */
+    const DBG_MAX = 400, dbgLines = [];
+    const pad2 = (n) => String(n).padStart(2, "0");
+    function stamp(){ const d=new Date(); return pad2(d.getHours())+":"+pad2(d.getMinutes())+":"+pad2(d.getSeconds())+"."+String(d.getMilliseconds()).padStart(3,"0"); }
+    function dbg(msg){ dbgLines.push(stamp()+"  "+msg); if(dbgLines.length>DBG_MAX)dbgLines.shift();
+      if(els.dbgLog){ els.dbgLog.textContent=dbgLines.join("\n"); els.dbgLog.scrollTop=els.dbgLog.scrollHeight; } }
+    window.addEventListener("error",(e)=>dbg("JS ERROR: "+(e.message||(e.error&&e.error.message)||e.error||"?")));
+    window.addEventListener("unhandledrejection",(e)=>dbg("PROMISE REJECT: "+((e.reason&&e.reason.message)||e.reason||"?")));
+    dbg("app loaded · "+location.protocol+" · "+navigator.userAgent.slice(0,52));
 
-    /* ---------- On-screen debug log ---------- */
-    const DBG_MAX = 400;
-    const dbgLines = [];
-    const dbgEl = $("dbgLog");
-    function pad2(n) { return String(n).padStart(2, "0"); }
-    function stamp() {
-      const d = new Date();
-      return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()) +
-        "." + String(d.getMilliseconds()).padStart(3, "0");
-    }
-    function dbg(msg) {
-      dbgLines.push(stamp() + "  " + msg);
-      if (dbgLines.length > DBG_MAX) dbgLines.shift();
-      if (dbgEl) { dbgEl.textContent = dbgLines.join("\n"); dbgEl.scrollTop = dbgEl.scrollHeight; }
-    }
-    window.addEventListener("error", (e) =>
-      dbg("JS ERROR: " + (e.message || (e.error && e.error.message) || e.error || "?")));
-    window.addEventListener("unhandledrejection", (e) =>
-      dbg("PROMISE REJECT: " + ((e.reason && e.reason.message) || e.reason || "?")));
-    dbg("app loaded · " + location.protocol + " · UA " + navigator.userAgent.slice(0, 60));
-    dbg("ZXing library " + (window.ZXing ? "loaded" : "NOT loaded"));
+    const sleep = (ms) => new Promise((r)=>setTimeout(r,ms));
+    const num = (v) => { const n=parseFloat(String(v).replace(/[^0-9.]/g,"")); return isFinite(n)?n:NaN; };
+    const esc = (s) => String(s).replace(/[&<>"]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
 
-    /* ---------- Scanning ---------- */
-
-    function makeReader() {
-      const ZX = window.ZXing;
-      const hints = new Map();
-      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
-        ZX.BarcodeFormat.UPC_A, ZX.BarcodeFormat.UPC_E,
-        ZX.BarcodeFormat.EAN_13, ZX.BarcodeFormat.EAN_8, ZX.BarcodeFormat.QR_CODE,
-      ]);
-      hints.set(ZX.DecodeHintType.TRY_HARDER, true);
-      return new ZX.BrowserMultiFormatReader(hints, 400);
-    }
-
-    let frames = 0, hits = 0;
-    const seenErrs = new Set();
-
-    async function startScan() {
-      if (running) return;
-      if (!window.ZXing) {
-        setStatus("Scanner library didn't load — check your connection, or enter it by hand below.");
-        dbg("startScan aborted: ZXing not loaded");
-        return;
-      }
-      setStatus("Starting camera…");
-      els.scanBtn.hidden = true;
-      els.stopBtn.hidden = false;
-      frames = 0; hits = 0; seenErrs.clear();
-      captured = { upc: null, style: null, name: null, colorway: null, price: null, msrp: null };
-      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
-      els.captureStatus.hidden = false;
-      els.useBtn.hidden = true;
-      updateChips();
-      dbg("startScan tapped");
-      try {
-        reader = reader || makeReader();
-        let deviceId = null;
-        try {
-          const devices = await reader.listVideoInputDevices();
-          dbg("cameras (" + devices.length + "): " +
-            devices.map((d) => (d.label || "(no label)")).join(" | "));
-          const back = devices.find((d) => /back|rear|environment/i.test(d.label));
-          deviceId = (back || devices[devices.length - 1] || {}).deviceId || null;
-          dbg("chosen camera: " + (back ? "rear-labelled" : "last/default") +
-            (deviceId ? " id=" + deviceId.slice(0, 8) + "…" : " (none)"));
-        } catch (err) { dbg("listVideoInputDevices failed: " + (err.name || err.message)); }
-
-        const onResult = (result, err) => {
-          frames++;
-          if (result) {
-            hits++;
-            dbg("DECODED [" + result.getBarcodeFormat() + "] " + result.getText());
-            onLiveCode(result.getText(), result.getBarcodeFormat());
-          } else if (err) {
-            const nm = err.name || (err.constructor && err.constructor.name) || "err";
-            // NotFoundException fires every empty frame — that's normal, log it once.
-            if (!seenErrs.has(nm)) { seenErrs.add(nm); dbg("scan status: " + nm + " (per-frame; normal if 'NotFound')"); }
-          }
-          if (frames % 10 === 0) {
-            const vw = els.video.videoWidth || 0, vh = els.video.videoHeight || 0;
-            dbg("scanning… " + frames + " frames, " + hits + " codes, video " + vw + "x" + vh);
-            setStatus("Scanning… still looking (" + frames + " frames). Fill the frame with the barcode, good light.");
-          }
-        };
-
-        // Prefer high resolution — low-res frames often can't resolve a UPC.
-        const base = { width: { ideal: 1920 }, height: { ideal: 1080 } };
-        const constraints = deviceId
-          ? { video: Object.assign({ deviceId: { exact: deviceId } }, base) }
-          : { video: Object.assign({ facingMode: { ideal: "environment" } }, base) };
-        dbg("starting decode with constraints: " + JSON.stringify(constraints.video));
-        await reader.decodeFromConstraints(constraints, els.video, onResult);
-
-        running = true;
-        els.placeholder.hidden = true;
-        els.reticle.hidden = false;
-        setStatus("Scanning… hold the whole label inside the box: name, barcode, and price sticker.");
-        startOcrLoop();
-        setTimeout(() => {
-          try {
-            const so = els.video.srcObject;
-            const tr = so && so.getVideoTracks && so.getVideoTracks()[0];
-            const s = tr && tr.getSettings ? tr.getSettings() : {};
-            dbg("stream track: " + (s.label || (tr && tr.label) || "?") +
-              " " + (s.width || "?") + "x" + (s.height || "?") + " facing=" + (s.facingMode || "?"));
-            dbg("video el: " + els.video.videoWidth + "x" + els.video.videoHeight +
-              " paused=" + els.video.paused + " readyState=" + els.video.readyState);
-          } catch (err) { dbg("track info err: " + (err.message || err)); }
-        }, 1400);
-      } catch (e) {
-        stopScan();
-        dbg("startScan FAILED: " + (e.name || "") + " " + (e.message || e));
-        if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) {
-          setStatus("Camera blocked. Allow camera access (needs an https page), or tap “📷 Read a photo instead”.");
-        } else if (e && e.name === "NotReadableError") {
-          setStatus("Camera is busy (another app/tab has it). Close that and retry.");
-        } else if (e && e.name === "OverconstrainedError") {
-          setStatus("This camera rejected the settings. Retrying is worth a shot; otherwise use “📷 Read a photo”.");
-        } else {
-          setStatus("Couldn't start the camera. Try “📷 Read a photo instead”, or enter it by hand.");
-        }
-      }
-    }
-
-    function stopScan() {
-      running = false;
-      stopOcrLoop();
-      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
-      try { if (reader) reader.reset(); } catch (_) {}
-      els.scanBtn.hidden = false;
-      els.stopBtn.hidden = true;
-      els.reticle.hidden = true;
-      els.placeholder.hidden = false;
-    }
-
-    let lastValue = null;
-    let lastAt = 0;
-    function handleScan(text, format) {
-      const now = Date.now();
-      if (text === lastValue && now - lastAt < 2500) return;
-      lastValue = text;
-      lastAt = now;
-      if (navigator.vibrate) navigator.vibrate(40);
-      const fmt = String(format || "");
-      if (fmt.includes("QR")) handleQr(text);
-      else identifyByUpc(onlyDigits(text));
-    }
-
-    function handleQr(text) {
-      const styleMatch = text.match(/\b([A-Z]{2}\d{4}|\d{6})[-\s]?(\d{3})\b/);
-      if (styleMatch) identifyByStyle(styleMatch[1] + styleMatch[2]);
-      if (/^https?:\/\//i.test(text)) current.qrUrl = text;
-      if (!styleMatch) {
-        showResult({ name: null }, "QR");
-        setStatus("Read a QR code. If it didn't identify the shoe, scan the barcode too.");
-      }
-    }
-
-    // Decode a still photo (used when the live camera can't run, e.g. saved file).
-    // Tries the barcode/QR first, then OCR for the sticker prices.
-    async function decodePhoto(file) {
-      if (!file) return;
-      lastValue = null;
-      dbg("photo picked: " + (file.name || "image") + " " + Math.round((file.size || 0) / 1024) + "KB");
-      let gotId = false;
-      if (window.ZXing) {
-        let url = null;
-        try {
-          url = URL.createObjectURL(file);
-          reader = reader || makeReader();
-          const res = await reader.decodeFromImageUrl(url);
-          if (res) {
-            dbg("photo DECODED [" + res.getBarcodeFormat() + "] " + res.getText());
-            handleScan(res.getText(), res.getBarcodeFormat());
-            gotId = true;
-          }
-        } catch (err) {
-          dbg("photo: no barcode found (" + (err && err.name || "n/a") + "), trying OCR");
-        } finally {
-          if (url) URL.revokeObjectURL(url);
-        }
-      }
-      await runOcr(file, gotId ? "fill" : "identify");
-    }
-
-    /* ---------- Continuous dual capture (UPC + price) ---------- */
-
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-    function onLiveCode(text, format) {
-      const fmt = String(format || "");
-      if (fmt.includes("QR")) {
-        const m = text.match(/\b([A-Z]{2}\d{4}|\d{6})[-\s]?(\d{3})\b/);
-        if (m) setCapturedStyle(m[1] + m[2]);
-        if (/^https?:\/\//i.test(text)) current.qrUrl = text;
-      } else {
-        setCapturedUpc(onlyDigits(text));
-      }
-    }
-
-    function setCapturedUpc(upc) {
-      if (!upc || upc.length < 8 || captured.upc === upc) return;
-      captured.upc = upc;
-      if (navigator.vibrate) navigator.vibrate(30);
-      dbg("captured UPC " + upc);
-      updateChips();
-      checkProgress();
-    }
-
-    function setCapturedStyle(styleDigits) {
-      const key = onlyAlnum(styleDigits).toUpperCase();
-      if (!key || captured.style === key) return;
-      captured.style = key;
-      dbg("captured style " + key);
-      updateChips();
-      checkProgress();
-    }
-
-    function setCapturedName(name) {
-      if (!name || captured.name) return;
-      captured.name = name;
-      dbg("captured name " + name);
-      if (navigator.vibrate) navigator.vibrate(30);
-      updateChips();
-      checkProgress();
-    }
-
-    // Parse an OCR frame for a printed name, style code, and the sticker prices.
-    function ingestOcrText(text) {
-      const up = (text || "").toUpperCase();
-      const sm = up.match(/\b(\d{6})[-\s]?(\d{3})\b/);
-      if (sm && !captured.style) setCapturedStyle(sm[1] + sm[2]);
-      if (!captured.name) { const nm = extractName(text || ""); if (nm) setCapturedName(nm); }
-      if (captured.price == null) {
-        const pr = parseStickerPrices(text || "");
-        if (pr.price != null) {
-          captured.price = pr.price;
-          if (pr.msrp != null) captured.msrp = pr.msrp;
-          if (navigator.vibrate) navigator.vibrate(30);
-          dbg("captured price " + pr.price + (pr.msrp != null ? " / msrp " + pr.msrp : ""));
-          updateChips();
-          checkProgress();
-        }
-      }
-    }
-
-    // The catalog entry for what we've captured, if any (bonus MSRP for known shoes).
-    function catalogHit() {
-      if (captured.upc && CATALOG.byUpc[captured.upc]) return CATALOG.byUpc[captured.upc];
-      if (captured.style && CATALOG.byStyle[captured.style]) return CATALOG.byStyle[captured.style];
-      return null;
-    }
-    // We can name the shoe once OCR reads its name, or the barcode matches the catalog.
-    function hasIdentity() { return !!(captured.name || catalogHit()); }
-
-    function setChip(el, ok, txt) {
-      el.classList.toggle("found", ok);
-      el.querySelector("b").textContent = txt;
-    }
-
-    function updateChips() {
-      const hit = catalogHit();
-      const idName = (hit && hit.name) || captured.name;
-      const idOk = !!(idName || captured.upc || captured.style);
-      const idTxt = idName || captured.upc || prettyStyle(captured.style) || "scanning…";
-      setChip(els.capUpc, idOk, idTxt);
-      const priceOk = captured.price != null;
-      setChip(els.capPrice, priceOk, priceOk ? ("$" + captured.price.toFixed(2)) : "scanning…");
-      els.useBtn.hidden = !(idOk || priceOk);
-    }
-
-    // Decide when to stop. We want a name/identity AND a price. If we have the
-    // name but no price after a grace period, finish anyway — never freeze on a
-    // half-read, and never fall back to a useless "unknown" screen.
-    function checkProgress() {
-      if (hasIdentity() && captured.price != null) { finalizeCapture(); return; }
-      if (hasIdentity() && !nameGraceTimer) {
-        nameGraceTimer = setTimeout(() => {
-          nameGraceTimer = null;
-          if (running) { dbg("grace elapsed — finishing with what's read"); finalizeCapture(); }
-        }, 5000);
-      }
-    }
-
-    function finalizeCapture() {
-      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
-      stopScan();
-      const hit = catalogHit();
-      const name = (hit && hit.name) || captured.name || null;
-      const colorway = (hit && hit.colorway) || captured.colorway || null;
-      const style = (hit && hit.style) || captured.style || null;
-      const msrp = (hit && hit.msrp != null) ? hit.msrp : captured.msrp;
-
-      current.upc = captured.upc || current.upc;
-      if (style) current.style = style;
-
-      showResult(
-        { name: name, colorway: colorway, style: style, msrp: msrp },
-        hit ? "Matched" : (name ? "Read" : (captured.upc ? "Scanned" : "Read"))
-      );
-      if (msrp != null && !els.msrp.value) els.msrp.value = Number(msrp).toFixed(2);
-      if (captured.price != null) els.price.value = captured.price.toFixed(2);
-      buildCompLinks();
-      updateVerdict();
-    }
-
-    // Crop the framed label region, upscale, and grayscale+contrast it so the
-    // OCR actually resolves the small print. Raw full-frame OCR reads as noise.
-    const ocrCanvas = document.createElement("canvas");
-    function grabOcrFrame() {
-      const v = els.video, vw = v.videoWidth, vh = v.videoHeight;
-      if (!vw) return null;
-      // Crop to roughly the on-screen reticle box (where the user aims the label).
-      const cx = Math.round(vw * 0.08), cy = Math.round(vh * 0.12);
-      const cw0 = Math.round(vw * 0.84), ch0 = Math.round(vh * 0.72);
-      const scale = Math.min(3, 1400 / cw0);
-      const cw = Math.max(1, Math.round(cw0 * scale)), ch = Math.max(1, Math.round(ch0 * scale));
-      ocrCanvas.width = cw; ocrCanvas.height = ch;
-      const ctx = ocrCanvas.getContext("2d");
-      ctx.drawImage(v, cx, cy, cw0, ch0, 0, 0, cw, ch);
-      try {
-        const img = ctx.getImageData(0, 0, cw, ch), d = img.data, C = 1.4, I = 128 * (1 - C);
-        for (let i = 0; i < d.length; i += 4) {
-          let g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-          g = g * C + I; g = g < 0 ? 0 : g > 255 ? 255 : g;
-          d[i] = d[i + 1] = d[i + 2] = g;
-        }
-        ctx.putImageData(img, 0, 0);
-      } catch (_) { /* frame not ready */ }
-      return ocrCanvas;
-    }
-
-    // Background loop: keep OCR-reading the framed label until we have both a
-    // name/identity and a price (or the grace timer finishes us).
-    let ocrWorker = null;
-    let ocrLoopOn = false;
-    async function startOcrLoop() {
-      if (ocrLoopOn) return;
-      try {
-        dbg("OCR loop: loading reader…");
-        await loadTesseract();
-        if (!ocrWorker) ocrWorker = await window.Tesseract.createWorker("eng", 1);
-        ocrLoopOn = true;
-        dbg("OCR loop started");
-        while (ocrLoopOn && running) {
-          const needName = !hasIdentity();
-          const needPrice = captured.price == null;
-          if ((needName || needPrice) && els.video.videoWidth) {
-            const cv = grabOcrFrame();
-            if (cv) {
-              try {
-                const { data } = await ocrWorker.recognize(cv);
-                ingestOcrText(data && data.text || "");
-              } catch (e) { dbg("OCR frame err: " + (e.message || e)); }
-            }
-          }
-          await sleep((!hasIdentity() || captured.price == null) ? 250 : 1500);
-        }
-        dbg("OCR loop stopped");
-      } catch (e) {
-        ocrLoopOn = false;
-        dbg("OCR loop failed to start: " + (e.message || e));
-      }
-    }
-    function stopOcrLoop() { ocrLoopOn = false; }
-
-    /* ---------- Identify ---------- */
-
-    function identifyByUpc(upc) {
-      if (!upc || upc.length < 8) {
-        setStatus("That didn't look like a valid barcode. Try again, steady and close.");
-        return;
-      }
-      current.upc = upc;
-      const hit = CATALOG.byUpc[upc];
-      showResult(hit || { name: null }, hit ? "Matched" : "Scanned");
-    }
-
-    function identifyByStyle(styleDigits) {
-      const key = onlyAlnum(styleDigits).toUpperCase();
-      current.style = key;
-      const hit = CATALOG.byStyle[key];
-      showResult(hit || { name: null, style: prettyStyle(key) }, hit ? "Matched" : "Scanned");
-    }
-
-    /* ---------- Result UI ---------- */
-
-    function showResult(shoe, badge) {
-      stopScan();
-      current.name = shoe.name || current.name || null;
-      current.style = shoe.style || current.style || (current.style ? prettyStyle(current.style) : null);
-      current.colorway = shoe.colorway || current.colorway || null;
-
-      els.scanCard.hidden = true;
-      els.resultCard.hidden = false;
-      els.idBadge.textContent = badge || "Scanned";
-
-      const style = shoe.style || current.style || null;
-      if (shoe.name) {
-        // Real name (from OCR or the catalog).
-        els.shoeName.textContent = shoe.name;
-        const bits = [shoe.colorway, prettyStyle(style)].filter(Boolean);
-        if (current.upc) bits.push("UPC " + current.upc);
-        els.shoeMeta.textContent = bits.join("  ·  ");
-      } else if (style) {
-        // No name read, but we have a style code — show that, not "unknown".
-        els.shoeName.textContent = "Style " + prettyStyle(style);
-        els.shoeMeta.textContent = current.upc ? ("UPC " + current.upc) : "Couldn't read the name — details below";
-      } else if (current.upc) {
-        els.shoeName.textContent = "UPC " + current.upc;
-        els.shoeMeta.textContent = "Couldn't read the name — details below";
-      } else {
-        els.shoeName.textContent = "Enter the details";
-        els.shoeMeta.textContent = "";
-      }
-      if (shoe.msrp) els.msrp.value = Number(shoe.msrp).toFixed(2);
-      els.price.focus({ preventScroll: true });
-      buildCompLinks();
-      updateVerdict();
-      els.resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    function buildCompLinks() {
-      const enc = encodeURIComponent(searchTerms());
-      const links = [
-        { label: "eBay sold", url: `https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1` },
-        { label: "StockX", url: `https://stockx.com/search?s=${enc}` },
-        { label: "GOAT", url: `https://www.goat.com/search?query=${enc}` },
-        { label: "Google Shopping", url: `https://www.google.com/search?tbm=shop&q=${enc}` },
-      ];
-      if (current.qrUrl) links.push({ label: "Open box QR link ↗", url: current.qrUrl, full: true });
-      els.compLinks.innerHTML = "";
-      links.forEach((l) => {
-        const a = document.createElement("a");
-        a.href = l.url; a.target = "_blank"; a.rel = "noopener";
-        a.textContent = l.label;
-        if (l.full) a.className = "full";
-        els.compLinks.appendChild(a);
-      });
-    }
-
-    function searchTerms() {
-      if (current.name) return [current.name, prettyStyle(current.style)].filter(Boolean).join(" ");
-      if (current.style) return "sneaker " + prettyStyle(current.style);
-      if (current.upc) return current.upc;
-      return "sneaker";
-    }
-
-    /* ---------- Verdict ---------- */
-
-    function num(v) {
-      const n = parseFloat(String(v).replace(/[^0-9.]/g, ""));
-      return isFinite(n) ? n : NaN;
-    }
-
-    function updateVerdict() {
-      const msrp = num(els.msrp.value);
-      const price = num(els.price.value);
-      if (!(msrp > 0) || !(price >= 0)) { els.verdict.hidden = true; return; }
-      els.verdict.hidden = false;
-
-      const off = (msrp - price) / msrp;
-      const pct = Math.round(off * 100);
-      els.discountFill.style.width = Math.max(0, Math.min(100, pct)) + "%";
-
-      let emoji, label, color, note;
-      if (price >= msrp) {
-        emoji = "🚩"; label = "At or above retail"; color = "var(--bad)";
-        note = "No discount off MSRP. Only worth it if resale runs higher — check the sold links.";
-      } else if (off >= 0.5) {
-        emoji = "🔥"; label = `Great — ${pct}% off MSRP`; color = "var(--good)";
-        note = "Steep discount. Still confirm resale isn't even lower for this model.";
-      } else if (off >= 0.3) {
-        emoji = "✅"; label = `Good — ${pct}% off MSRP`; color = "var(--good)";
-        note = "Solid outlet-level discount for a general release.";
-      } else if (off >= 0.15) {
-        emoji = "🤔"; label = `Okay — ${pct}% off MSRP`; color = "var(--ok)";
-        note = "Modest discount. Common shoes often sell for less on resale — check first.";
-      } else {
-        emoji = "😐"; label = `Small — ${pct}% off MSRP`; color = "var(--ok)";
-        note = "Barely a discount. Worth comparing against sold listings before buying.";
-      }
-      els.vEmoji.textContent = emoji;
-      els.vLabel.textContent = label;
-      els.vSub.textContent = `$${price.toFixed(2)} vs $${msrp.toFixed(2)} MSRP`;
-      els.vNote.textContent = note;
-      els.discountFill.style.background = color;
-    }
-
-    /* ---------- OCR (on-device, lazy-loaded) ---------- */
-
+    /* ---------- OCR engine (lazy) ---------- */
     const TESSERACT_SRC = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
-    let tessLoading = null;
-
-    function loadTesseract() {
-      if (window.Tesseract) return Promise.resolve();
-      if (tessLoading) return tessLoading;
-      tessLoading = new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.src = TESSERACT_SRC;
-        s.onload = () => resolve();
-        s.onerror = () => { tessLoading = null; reject(new Error("tesseract load failed")); };
-        document.head.appendChild(s);
-      });
+    let tessLoading = null, ocrWorker = null;
+    function loadTesseract(){
+      if(window.Tesseract) return Promise.resolve();
+      if(tessLoading) return tessLoading;
+      tessLoading = new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=TESSERACT_SRC;
+        s.onload=()=>res(); s.onerror=()=>{tessLoading=null;rej(new Error("tesseract load failed"));}; document.head.appendChild(s); });
       return tessLoading;
     }
+    async function getWorker(){ await loadTesseract(); if(!ocrWorker) ocrWorker=await window.Tesseract.createWorker("eng",1); return ocrWorker; }
 
-    async function runOcr(file, mode) {
-      const statusEl = mode === "fill" ? els.ocrStatus : els.status;
-      if (!file) return;
-      try {
-        setEl(statusEl, "Loading text reader…");
-        await loadTesseract();
-        setEl(statusEl, "Reading the photo…");
-        const worker = await window.Tesseract.createWorker("eng", 1, {
-          logger: (m) => {
-            if (m && m.status === "recognizing text") {
-              setEl(statusEl, `Reading… ${Math.round((m.progress || 0) * 100)}%`);
-            }
-          },
-        });
-        const { data } = await worker.recognize(file);
-        await worker.terminate();
-        applyOcr((data && data.text) || "", mode, statusEl);
-      } catch (e) {
-        setEl(statusEl, "Couldn't read that photo. Try again in better light, or type the price in.");
-      }
+    /* ---------- Text parsing ---------- */
+    function priceList(text){ return [...String(text).matchAll(/(\d{1,4}[.,]\d{2})/g)].map(m=>parseFloat(m[1].replace(",",".")))
+      .filter(n=>n>0&&n<100000); }
+    function nearestPrice(text,kw){ const i=text.indexOf(kw); if(i<0)return null; let b=null,bd=Infinity;
+      for(const m of text.matchAll(/(\d{1,4}[.,]\d{2})/g)){ const d=Math.abs(m.index-i); if(d<bd){bd=d;b=parseFloat(m[1].replace(",","."));} } return b; }
+    function parseStickerPrices(text){
+      const up=String(text).toUpperCase();
+      let msrp=nearestPrice(up,"WAS"); if(msrp==null)msrp=nearestPrice(up,"RETAIL"); if(msrp==null)msrp=nearestPrice(up,"SUGG");
+      let now=nearestPrice(up,"NOW"); if(now==null)now=nearestPrice(up,"OUR");
+      const all=priceList(up); let m=msrp,p=now;
+      if(all.length===1){ if(p==null)p=all[0]; if(m===all[0]&&p===all[0])m=null; }
+      else if(all.length>=2){ const u=[...new Set(all)].sort((a,b)=>b-a); if(m==null)m=u[0]; if(p==null)p=u[u.length-1]; }
+      return { msrp:m, price:p };
     }
-
-    function priceList(text) {
-      return [...text.matchAll(/(\d{1,4}\.\d{2})/g)].map((m) => parseFloat(m[1])).filter((n) => n > 0 && n < 100000);
-    }
-
-    function nearestPrice(text, kw) {
-      const i = text.indexOf(kw);
-      if (i < 0) return null;
-      let best = null, bd = Infinity;
-      for (const m of text.matchAll(/(\d{1,4}\.\d{2})/g)) {
-        const d = Math.abs(m.index - i);
-        if (d < bd) { bd = d; best = parseFloat(m[1]); }
-      }
-      return best;
-    }
-
-    function parseStickerPrices(text) {
-      const up = String(text).toUpperCase();
-      let msrp = nearestPrice(up, "WAS");
-      if (msrp == null) msrp = nearestPrice(up, "RETAIL");
-      if (msrp == null) msrp = nearestPrice(up, "SUGG");
-      let now = nearestPrice(up, "NOW");
-      if (now == null) now = nearestPrice(up, "OUR");
-      const all = priceList(up);
-      let m = msrp, p = now;
-      if (all.length === 1) {
-        if (p == null) p = all[0];
-        if (m === all[0] && p === all[0]) m = null;
-      } else if (all.length >= 2) {
-        const uniq = [...new Set(all)].sort((a, b) => b - a);
-        if (m == null) m = uniq[0];
-        if (p == null) p = uniq[uniq.length - 1];
-      }
-      return { msrp: m, price: p };
-    }
-
-    // Pull the shoe's model name off the box label from OCR text. The name is
-    // the topmost line of real words — skip size/country/price/colorway noise,
-    // and clean token-by-token so a column-merged "NAME  SUGG. RETAIL" still works.
-    const NAME_BLOCK = new Set(["SUGG", "SUGG.", "RETAIL", "OUR", "PRICE", "WAS", "NOW", "MADE",
-      "FABRIQUE", "FABRICADO", "HECHO", "EN", "IN", "BY", "UK", "BR", "EUR", "CM", "US", "MM",
-      "QTY", "STYLE", "SIZE", "TAILLE", "NOIR", "BLANC", "BLACK", "WHITE", "ORANGE", "TEAM",
-      "EQUIPE", "GREY", "GRAY", "RED", "BLUE", "GREEN", "PINK", "BROWN", "PURPLE", "YELLOW"]);
+    const NAME_BLOCK = new Set(["SUGG","SUGG.","RETAIL","OUR","PRICE","WAS","NOW","MADE","FABRIQUE","FABRICADO",
+      "HECHO","EN","IN","BY","UK","BR","EUR","CM","US","MM","QTY","STYLE","SIZE","TAILLE","NOIR","BLANC","BLACK",
+      "WHITE","ORANGE","TEAM","EQUIPE","GREY","GRAY","RED","BLUE","GREEN","PINK","BROWN","PURPLE","YELLOW"]);
     const NAME_COUNTRY = /INDONES|VIETNAM|CHINA|THAILAND|CAMBODIA|FABRI|HECHO|\bMADE\b/i;
-    function extractName(text) {
-      for (const raw of String(text).split("\n")) {
-        if (NAME_COUNTRY.test(raw)) continue;
-        const toks = raw.replace(/[|=—_~`*]/g, " ").replace(/[^A-Za-z0-9.&\- ]/g, " ").split(/\s+/).filter(Boolean);
-        const kept = [];
-        for (const t of toks) {
-          const up = t.toUpperCase().replace(/\.$/, "");
-          const letters = (t.match(/[A-Za-z]/g) || []).length;
-          const digits = (t.match(/[0-9]/g) || []).length;
-          if (NAME_BLOCK.has(up) || NAME_BLOCK.has(t.toUpperCase())) continue;
-          if (letters === 0) { if (digits > 0 && digits <= 3 && kept.length > 0) kept.push(t); continue; }
-          if (!/^[A-Za-z]/.test(t)) continue;   // name tokens start with a letter
-          if (letters >= 2) kept.push(t);
+    function extractName(text){
+      for(const raw of String(text).split("\n")){
+        if(NAME_COUNTRY.test(raw)) continue;
+        const toks=raw.replace(/[|=—_~`*]/g," ").replace(/[^A-Za-z0-9.&\- ]/g," ").split(/\s+/).filter(Boolean);
+        const kept=[];
+        for(const t of toks){
+          const up=t.toUpperCase().replace(/\.$/,"");
+          const letters=(t.match(/[A-Za-z]/g)||[]).length, digits=(t.match(/[0-9]/g)||[]).length;
+          if(NAME_BLOCK.has(up)||NAME_BLOCK.has(t.toUpperCase())) continue;
+          if(letters===0){ if(digits>0&&digits<=3&&kept.length>0) kept.push(t); continue; }
+          if(!/^[A-Za-z]/.test(t)) continue;
+          if(letters>=2) kept.push(t);
         }
-        if (kept.length < 2) continue;
-        const cand = kept.join(" ").replace(/\s+/g, " ").trim();
-        const letters = (cand.match(/[A-Za-z]/g) || []).length;
-        const words = kept.filter((t) => /[A-Za-z]{2,}/.test(t)).length;
-        if (letters < 6 || words < 2 || cand.length > 40) continue;
+        if(kept.length<2) continue;
+        const cand=kept.join(" ").replace(/\s+/g," ").trim();
+        const letters=(cand.match(/[A-Za-z]/g)||[]).length, words=kept.filter(t=>/[A-Za-z]{2,}/.test(t)).length;
+        if(letters<6||words<2||cand.length>40) continue;
         return cand;
       }
       return null;
     }
 
-    function applyOcr(text, mode, statusEl) {
-      const up = text.toUpperCase();
+    /* ---------- Verdict + resale links ---------- */
+    function verdictFor(msrp,price){
+      const off=(msrp-price)/msrp, pct=Math.round(off*100);
+      if(price>=msrp) return {emoji:"🚩",label:"at/above retail",color:"var(--bad)",pct};
+      if(off>=0.5) return {emoji:"🔥",label:pct+"% off",color:"var(--good)",pct};
+      if(off>=0.3) return {emoji:"✅",label:pct+"% off",color:"var(--good)",pct};
+      if(off>=0.15) return {emoji:"🤔",label:pct+"% off",color:"var(--ok)",pct};
+      return {emoji:"😐",label:pct+"% off",color:"var(--ok)",pct};
+    }
+    function compLinksFor(name){
+      const q=encodeURIComponent(name||"sneaker");
+      return [
+        {label:"eBay sold", url:`https://www.ebay.com/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1`},
+        {label:"StockX", url:`https://stockx.com/search?s=${q}`},
+        {label:"GOAT", url:`https://www.goat.com/search?query=${q}`},
+        {label:"Google Shopping", url:`https://www.google.com/search?tbm=shop&q=${q}`},
+      ];
+    }
 
-      const sm = up.match(/\b(\d{6})[-\s]?(\d{3})\b/);
-      let identified = false;
-      if (sm && (mode === "identify" || !current.name)) {
-        const key = sm[1] + sm[2];
-        if (CATALOG.byStyle[key]) { identifyByStyle(key); identified = true; }
-        else current.style = key;
+    /* ---------- Camera ---------- */
+    let stream=null, running=false;
+    async function startCamera(){
+      if(running) return;
+      setStatus("Starting camera…"); dbg("startCamera");
+      els.startBtn.hidden=true; els.stopBtn.hidden=false;
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080} } });
+        els.video.srcObject=stream; await els.video.play();
+        running=true; els.placeholder.hidden=true; els.reticle.hidden=false; els.captureStatus.hidden=false;
+        const tr=stream.getVideoTracks()[0], s=tr&&tr.getSettings?tr.getSettings():{};
+        dbg("camera on: "+(s.width||"?")+"x"+(s.height||"?")+" facing="+(s.facingMode||"?"));
+        updateChips();
+        startOcrLoop();
+      }catch(e){
+        running=false; els.startBtn.hidden=false; els.stopBtn.hidden=true;
+        dbg("camera FAILED: "+(e.name||"")+" "+(e.message||e));
+        if(e && (e.name==="NotAllowedError"||e.name==="SecurityError"))
+          setStatus("Camera blocked. Allow access (needs https), or tap “📷 Read a photo”, or add by hand.");
+        else if(e && e.name==="NotReadableError") setStatus("Camera is busy — close other apps using it and retry.");
+        else setStatus("Couldn't start the camera. Use “📷 Read a photo” or add a box by hand.");
       }
-      // Read the model name off the label if the barcode didn't identify it.
-      if (!current.name) { const nm = extractName(text || ""); if (nm) current.name = nm; }
+    }
+    function stopCamera(){
+      running=false;
+      if(graceTimer){ clearTimeout(graceTimer); graceTimer=null; }
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+      els.startBtn.hidden=false; els.stopBtn.hidden=true; els.reticle.hidden=true; els.placeholder.hidden=false;
+    }
 
-      const pr = parseStickerPrices(text || "");
-      const fillMsrp = pr.msrp, fillPrice = pr.price;
+    // Crop the framed label region, upscale, grayscale + contrast so small print resolves.
+    const ocrCanvas=document.createElement("canvas");
+    function grabOcrFrame(){
+      const v=els.video, vw=v.videoWidth, vh=v.videoHeight; if(!vw) return null;
+      const cx=Math.round(vw*0.06), cy=Math.round(vh*0.10), cw0=Math.round(vw*0.88), ch0=Math.round(vh*0.78);
+      const scale=Math.min(3,1500/cw0), cw=Math.max(1,Math.round(cw0*scale)), ch=Math.max(1,Math.round(ch0*scale));
+      ocrCanvas.width=cw; ocrCanvas.height=ch;
+      const ctx=ocrCanvas.getContext("2d"); ctx.drawImage(v,cx,cy,cw0,ch0,0,0,cw,ch);
+      try{ const img=ctx.getImageData(0,0,cw,ch),d=img.data,C=1.45,I=128*(1-C);
+        for(let i=0;i<d.length;i+=4){ let g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; g=g*C+I; g=g<0?0:g>255?255:g; d[i]=d[i+1]=d[i+2]=g; }
+        ctx.putImageData(img,0,0);
+      }catch(_){}
+      return ocrCanvas;
+    }
 
-      if (mode === "identify" && !identified) {
-        showResult({ name: current.name || null, style: current.style || null }, current.name ? "Read" : "Scanned");
+    /* ---------- Live capture ---------- */
+    let cap = { name:null, price:null, msrp:null };
+    let nameCands=[], priceCands=[], graceTimer=null, promptShown=false, ocrLoopOn=false;
+
+    async function startOcrLoop(){
+      if(ocrLoopOn) return;
+      try{
+        setStatus("Loading text reader…"); dbg("OCR loop: loading");
+        await getWorker(); ocrLoopOn=true; dbg("OCR loop started");
+        setStatus("Scanning… fill the frame with the label + price sticker.");
+        while(ocrLoopOn && running){
+          if((!cap.name || cap.price==null) && els.video.videoWidth){
+            const cv=grabOcrFrame();
+            if(cv){ try{ const {data}=await ocrWorker.recognize(cv); ingest(data&&data.text||""); }catch(e){ dbg("OCR frame err: "+(e.message||e)); } }
+          }
+          await sleep(280);
+        }
+        dbg("OCR loop stopped");
+      }catch(e){ ocrLoopOn=false; dbg("OCR loop failed: "+(e.message||e));
+        setStatus("Couldn't load the text reader. Check your connection, or add a box by hand."); }
+    }
+
+    function ingest(text){
+      if(!cap.name) considerName(text);
+      if(cap.price==null) considerPrice(text);
+      updateChips();
+      checkSaveOrPrompt();
+    }
+
+    // Confirm a name only when its words recur across frames — kills OCR noise.
+    function considerName(text){
+      const nm=extractName(text); if(!nm) return;
+      nameCands.push(nm.split(/\s+/).filter(Boolean)); if(nameCands.length>8) nameCands.shift();
+      const freq=new Map();
+      for(const arr of nameCands){ const seen=new Set(); for(const w of arr){ const u=w.toUpperCase(); if(seen.has(u))continue; seen.add(u); freq.set(u,(freq.get(u)||0)+1); } }
+      const good=new Set([...freq].filter(([w,c])=>c>=2 && /[A-Z]{2,}/.test(w)).map(([w])=>w));
+      if(good.size<2) return;
+      const recent=nameCands[nameCands.length-1], seq=[];
+      for(const w of recent){ const u=w.toUpperCase();
+        if(good.has(u)) seq.push(w);
+        else if(/^\d{1,2}$/.test(w) && w!=="00" && seq.length) seq.push(w); }
+      while(seq.length && /^\d+$/.test(seq[seq.length-1])) seq.pop();
+      const letters=(seq.join("").match(/[A-Za-z]/g)||[]).length;
+      // Hold out for a solid read: >=2 words and >=7 letters, so weak partials
+      // like "KY PER" keep scanning instead of saving a stub.
+      if(seq.length>=2 && letters>=7){ cap.name=seq.join(" "); dbg("NAME confirmed: "+cap.name); if(navigator.vibrate)navigator.vibrate(25); }
+    }
+
+    // Confirm a price only when the same value shows up twice — kills one-off misreads.
+    function considerPrice(text){
+      const pr=parseStickerPrices(text); if(pr.price==null) return;
+      priceCands.push(pr); if(priceCands.length>12) priceCands.shift();
+      const counts=new Map();
+      for(const c of priceCands){ const k=c.price.toFixed(2); counts.set(k,(counts.get(k)||0)+1); }
+      const hit=[...counts].find(([,c])=>c>=2);
+      if(hit){
+        cap.price=parseFloat(hit[0]);
+        const withM=priceCands.filter(c=>c.price.toFixed(2)===hit[0] && c.msrp!=null && c.msrp>c.price && c.msrp<100000);
+        if(withM.length) cap.msrp=withM[withM.length-1].msrp;
+        dbg("PRICE confirmed: "+cap.price+(cap.msrp?" / was "+cap.msrp:""));
+        if(navigator.vibrate)navigator.vibrate(25);
       }
-
-      if (fillMsrp != null && !els.msrp.value) els.msrp.value = fillMsrp.toFixed(2);
-      if (fillPrice != null) els.price.value = fillPrice.toFixed(2);
-      buildCompLinks();
-      updateVerdict();
-
-      if (fillPrice == null && fillMsrp == null) setEl(statusEl, "Read the photo but couldn't spot a price — type it in.");
-      else setEl(statusEl, "Filled from the photo — double-check the numbers.");
     }
 
-    /* ---------- Helpers ---------- */
-
-    function onlyDigits(s) { return String(s).replace(/\D/g, ""); }
-    function onlyAlnum(s) { return String(s).replace(/[^a-zA-Z0-9]/g, ""); }
-    function prettyStyle(s) {
-      if (!s) return "";
-      const k = onlyAlnum(s).toUpperCase();
-      if (/^[A-Z0-9]{6}\d{3}$/.test(k)) return k.slice(0, 6) + "-" + k.slice(6);
-      return s;
+    function setChip(el,ok,txt){ el.classList.toggle("found",ok); el.querySelector("b").textContent=txt; }
+    function updateChips(){
+      setChip(els.chipName, !!cap.name, cap.name||"scanning…");
+      setChip(els.chipPrice, cap.price!=null, cap.price!=null?("$"+cap.price.toFixed(2)):"scanning…");
     }
-    function setStatus(msg) { els.status.textContent = msg; }
-    function setEl(el, msg) { if (el) el.textContent = msg; }
 
-    function resetToScan() {
-      current = { name: null, style: null, upc: null, colorway: null };
-      captured = { upc: null, style: null, name: null, colorway: null, price: null, msrp: null };
-      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
-      lastValue = null;
-      els.msrp.value = ""; els.price.value = "";
-      els.manualUpc.value = ""; els.manualStyle.value = "";
-      setEl(els.ocrStatus, "");
-      els.verdict.hidden = true;
-      els.resultCard.hidden = true;
-      els.scanCard.hidden = false;
-      els.captureStatus.hidden = true;
-      els.useBtn.hidden = true;
-      setChip(els.capUpc, false, "…");
-      setChip(els.capPrice, false, "…");
-      setStatus("");
-      if (isSavedFile) showSavedFileHint();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    function checkSaveOrPrompt(){
+      if(cap.name && cap.price!=null){ saveBox("scan"); return; }
+      if(cap.name && cap.price==null && !promptShown && !graceTimer){
+        graceTimer=setTimeout(()=>{ graceTimer=null; if(running && cap.name && cap.price==null) showPricePrompt(); }, 8000);
+      }
     }
+
+    function showPricePrompt(){
+      promptShown=true;
+      els.savePrompt.hidden=false;
+      els.promptName.textContent=cap.name;
+      els.promptPrice.value=""; els.promptMsrp.value=(cap.msrp!=null?cap.msrp:"");
+      setStatus("Got the name — couldn't read the price. Type it, or hold the sticker closer.");
+      dbg("price prompt shown for "+cap.name);
+    }
+
+    function saveBox(source){
+      if(graceTimer){ clearTimeout(graceTimer); graceTimer=null; }
+      const item={ name: cap.name || "(unnamed shoe)", price: cap.price, msrp: cap.msrp };
+      saved.unshift(item);
+      renderList();
+      toast("Saved ✓ " + (item.name.length>22? item.name.slice(0,22)+"…" : item.name));
+      if(navigator.vibrate) navigator.vibrate([20,40,20]);
+      dbg("SAVED ("+source+"): "+JSON.stringify(item));
+      resetCapture();
+      if(running) setStatus("Saved. Point at the next box.");
+    }
+
+    function resetCapture(){
+      cap={ name:null, price:null, msrp:null };
+      nameCands=[]; priceCands=[]; promptShown=false;
+      if(graceTimer){ clearTimeout(graceTimer); graceTimer=null; }
+      els.savePrompt.hidden=true;
+      updateChips();
+    }
+
+    /* ---------- Saved list ---------- */
+    const saved=[];
+    function renderList(){
+      els.listCount.textContent=saved.length;
+      els.listWrap.hidden = saved.length===0;
+      els.list.innerHTML="";
+      saved.forEach((it,idx)=>els.list.appendChild(itemCard(it,idx)));
+    }
+    function itemCard(it,idx){
+      const card=document.createElement("div"); card.className="item";
+      const v=(it.msrp!=null && it.price!=null) ? verdictFor(it.msrp,it.price) : null;
+      let priceLine;
+      if(it.price!=null){
+        priceLine="$"+it.price.toFixed(2)+(it.msrp!=null?(' <span class="verdict-tag">· was $'+Number(it.msrp).toFixed(2)+"</span>"):"");
+        if(v) priceLine+=' <span class="verdict-tag">· '+v.emoji+" "+v.label+"</span>";
+      } else { priceLine='<span class="verdict-tag">price not set — tap Edit</span>'; }
+      card.innerHTML=
+        '<div class="item-head"><strong>'+esc(it.name)+'</strong><button class="rm" aria-label="Remove">✕</button></div>'+
+        '<div class="item-price">'+priceLine+'</div>'+
+        '<div class="item-links"></div>'+
+        '<div class="item-edit"><button>Edit price</button></div>';
+      const box=card.querySelector(".item-links");
+      compLinksFor(it.name).forEach(l=>{ const a=document.createElement("a"); a.href=l.url; a.target="_blank"; a.rel="noopener"; a.textContent=l.label; box.appendChild(a); });
+      card.querySelector(".rm").onclick=()=>{ saved.splice(idx,1); renderList(); };
+      card.querySelector(".item-edit button").onclick=()=>{
+        const p=prompt("Sticker price for "+it.name, it.price!=null?it.price:"");
+        if(p===null) return; const pv=num(p); if(pv>=0){ it.price=pv;
+          const m=prompt("Retail / was price (optional)", it.msrp!=null?it.msrp:""); if(m!==null){ const mv=num(m); it.msrp=mv>0?mv:it.msrp; }
+          renderList(); }
+      };
+      return card;
+    }
+
+    /* ---------- Photo mode ---------- */
+    async function runPhoto(file){
+      if(!file) return;
+      resetCapture(); els.captureStatus.hidden=false; updateChips();
+      setStatus("Reading photo…"); dbg("photo: "+(file.name||"image")+" "+Math.round((file.size||0)/1024)+"KB");
+      try{
+        const w=await getWorker();
+        const cv=await fileToCanvas(file);
+        const {data}=await w.recognize(cv);
+        const text=(data&&data.text)||"";
+        const nm=extractName(text), pr=parseStickerPrices(text);
+        if(nm) cap.name=nm;
+        if(pr.price!=null){ cap.price=pr.price; if(pr.msrp!=null)cap.msrp=pr.msrp; }
+        updateChips(); dbg("photo read name="+JSON.stringify(nm)+" price="+pr.price);
+        if(cap.name && cap.price!=null) saveBox("photo");
+        else if(cap.name) showPricePrompt();
+        else setStatus("Couldn't read the label — fill the frame with it and try again.");
+      }catch(e){ dbg("photo err: "+(e.message||e)); setStatus("Couldn't read that photo. Try again in better light."); }
+    }
+    function fileToCanvas(file){
+      return new Promise((resolve,reject)=>{
+        const img=new Image(), url=URL.createObjectURL(file);
+        img.onload=()=>{ URL.revokeObjectURL(url);
+          const maxW=1600, scale=Math.min(1,maxW/img.width)||1;
+          const cw=Math.max(1,Math.round(img.width*scale)), ch=Math.max(1,Math.round(img.height*scale));
+          const cv=document.createElement("canvas"); cv.width=cw; cv.height=ch;
+          const ctx=cv.getContext("2d"); ctx.drawImage(img,0,0,cw,ch);
+          try{ const im=ctx.getImageData(0,0,cw,ch),d=im.data,C=1.35,I=128*(1-C);
+            for(let i=0;i<d.length;i+=4){ let g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; g=g*C+I; g=g<0?0:g>255?255:g; d[i]=d[i+1]=d[i+2]=g; }
+            ctx.putImageData(im,0,0);
+          }catch(_){}
+          resolve(cv);
+        };
+        img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error("image load failed")); };
+        img.src=url;
+      });
+    }
+
+    /* ---------- Misc UI ---------- */
+    function setStatus(msg){ els.status.textContent=msg; }
+    let toastTimer=null;
+    function toast(msg){ els.toast.textContent=msg; els.toast.classList.add("show");
+      if(toastTimer)clearTimeout(toastTimer); toastTimer=setTimeout(()=>els.toast.classList.remove("show"),1800); }
 
     /* ---------- Events ---------- */
+    els.startBtn.addEventListener("click", startCamera);
+    els.stopBtn.addEventListener("click", ()=>{ stopCamera(); setStatus("Stopped. Tap Start camera to scan more."); });
 
-    els.scanBtn.addEventListener("click", startScan);
-    els.stopBtn.addEventListener("click", () => { stopScan(); setStatus(""); });
-    els.useBtn.addEventListener("click", finalizeCapture);
-    els.scanAgain.addEventListener("click", resetToScan);
-    els.msrp.addEventListener("input", updateVerdict);
-    els.price.addEventListener("input", updateVerdict);
+    els.photoBtn.addEventListener("click", ()=>{ els.ocrInput.value=""; els.ocrInput.click(); });
+    els.ocrInput.addEventListener("change",(e)=>{ const f=e.target.files&&e.target.files[0]; if(f) runPhoto(f); });
 
-    els.manualBtn.addEventListener("click", () => {
-      const upc = onlyDigits(els.manualUpc.value);
-      const style = els.manualStyle.value.trim();
-      if (style) { current.upc = upc || null; identifyByStyle(style); }
-      else if (upc) identifyByUpc(upc);
-      else setStatus("Type a barcode number or a style code first.");
+    els.promptSave.addEventListener("click", ()=>{
+      const p=num(els.promptPrice.value), m=num(els.promptMsrp.value);
+      if(!(p>=0)){ els.promptPrice.focus(); setStatus("Enter the sticker price to save."); return; }
+      cap.price=p; if(m>0) cap.msrp=m; saveBox("manual-price");
+    });
+    els.promptSkip.addEventListener("click", ()=>{ cap.price=null; cap.msrp=null; saveBox("name-only"); });
+
+    els.manAdd.addEventListener("click", ()=>{
+      const name=els.manName.value.trim(), p=num(els.manPrice.value), m=num(els.manMsrp.value);
+      if(!name){ els.manName.focus(); return; }
+      saved.unshift({ name, price:(p>=0?p:null), msrp:(m>0?m:null) });
+      renderList(); toast("Added ✓ "+name);
+      els.manName.value=""; els.manPrice.value=""; els.manMsrp.value="";
     });
 
-    // OCR / photo: one hidden file input, reused by both entry points.
-    let ocrMode = "identify";
-    els.photoBtn.addEventListener("click", () => {
-      stopScan();
-      ocrMode = "identify";
-      els.ocrInput.value = "";
-      els.ocrInput.click();
-    });
-    els.ocrFillBtn.addEventListener("click", () => {
-      ocrMode = "fill";
-      els.ocrInput.value = "";
-      els.ocrInput.click();
-    });
-    els.ocrInput.addEventListener("change", (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      if (ocrMode === "identify") decodePhoto(file);
-      else runOcr(file, "fill");
-    });
+    els.clearList.addEventListener("click", ()=>{ if(saved.length && confirm("Clear all saved boxes?")){ saved.length=0; renderList(); } });
 
-    // Debug log copy / clear.
-    $("dbgCopy").addEventListener("click", async () => {
-      const text = dbgLines.join("\n") || "(empty)";
-      try { await navigator.clipboard.writeText(text); $("dbgCopy").textContent = "Copied ✓"; }
-      catch (_) {
-        // Clipboard blocked — select the text so the user can long-press → Copy.
-        const r = document.createRange(); r.selectNodeContents(dbgEl);
-        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-        $("dbgCopy").textContent = "Selected — long-press Copy";
-      }
-      setTimeout(() => ($("dbgCopy").textContent = "Copy log"), 2500);
-    });
-    $("dbgClear").addEventListener("click", () => {
-      dbgLines.length = 0; dbgEl.textContent = "(cleared)";
-    });
+    els.dbgCopy.addEventListener("click", async ()=>{ const t=dbgLines.join("\n")||"(empty)";
+      try{ await navigator.clipboard.writeText(t); els.dbgCopy.textContent="Copied ✓"; }
+      catch(_){ const r=document.createRange(); r.selectNodeContents(els.dbgLog); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); els.dbgCopy.textContent="Selected — long-press Copy"; }
+      setTimeout(()=>els.dbgCopy.textContent="Copy log",2500); });
+    els.dbgClear.addEventListener("click", ()=>{ dbgLines.length=0; els.dbgLog.textContent="(cleared)"; });
 
-    els.helpBtn.addEventListener("click", () => els.helpDialog.showModal());
-    els.helpClose.addEventListener("click", () => els.helpDialog.close());
-    els.helpDialog.addEventListener("click", (e) => { if (e.target === els.helpDialog) els.helpDialog.close(); });
+    els.helpBtn.addEventListener("click", ()=>els.helpDialog.showModal());
+    els.helpClose.addEventListener("click", ()=>els.helpDialog.close());
+    els.helpDialog.addEventListener("click",(e)=>{ if(e.target===els.helpDialog) els.helpDialog.close(); });
 
-    document.addEventListener("visibilitychange", () => { if (document.hidden && running) stopScan(); });
+    document.addEventListener("visibilitychange", ()=>{ if(document.hidden && running) stopCamera(); });
 
-    /* ---------- Saved-file mode ---------- */
-    // Opened via file:// (saved HTML) — the live camera can't run, so steer
-    // the user to the photo path, which uses the native camera and works fine.
-    const isSavedFile = location.protocol === "file:";
-    function showSavedFileHint() {
-      setStatus("Opened from a saved file — tap “📷 Read a photo” to scan a box. (The live camera only runs on a hosted https page.)");
-    }
-    if (isSavedFile) showSavedFileHint();
+    if(location.protocol==="file:") setStatus("Opened from a saved file — the live camera can't run here. Use “📷 Read a photo”, or host it (https).");
   })();
   </script>
 </body>
