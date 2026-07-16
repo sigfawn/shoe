@@ -11,7 +11,190 @@
   <link rel="apple-touch-icon" href="icon.svg" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <title>Kicks Check — Is this shoe a good price?</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root {
+      --bg: #0b0b0f;
+      --surface: #16161d;
+      --surface-2: #1f1f29;
+      --border: #2a2a36;
+      --text: #f3f3f5;
+      --muted: #9a9aa8;
+      --accent: #ff5a1f;
+      --accent-2: #ffb020;
+      --good: #2ecc71;
+      --ok: #ffb020;
+      --bad: #ff4d4d;
+      --radius: 18px;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f4f7;
+        --surface: #ffffff;
+        --surface-2: #f0f0f4;
+        --border: #e3e3ea;
+        --text: #16161d;
+        --muted: #6b6b78;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-t) + 14px) 18px 12px;
+      position: sticky;
+      top: 0;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px);
+      z-index: 5;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+    .brand-mark { font-size: 22px; }
+    .brand-name { letter-spacing: -0.02em; }
+    .ghost-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font-size: 16px; font-weight: 700;
+    }
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 8px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    /* Scanner */
+    .scan-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      max-height: 56vh;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .scan-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; text-align: center; padding: 24px; color: var(--muted);
+    }
+    .scan-icon { font-size: 44px; }
+    .reticle {
+      position: absolute; inset: 14% 10%;
+      border-radius: 12px;
+      pointer-events: none;
+    }
+    .reticle span {
+      position: absolute; width: 26px; height: 26px;
+      border: 3px solid var(--accent);
+    }
+    .reticle span:nth-child(1){ top:0; left:0; border-right:0; border-bottom:0; border-top-left-radius:8px;}
+    .reticle span:nth-child(2){ top:0; right:0; border-left:0; border-bottom:0; border-top-right-radius:8px;}
+    .reticle span:nth-child(3){ bottom:0; left:0; border-right:0; border-top:0; border-bottom-left-radius:8px;}
+    .reticle span:nth-child(4){ bottom:0; right:0; border-left:0; border-top:0; border-bottom-right-radius:8px;}
+    .scan-controls { display: flex; gap: 10px; margin-top: 12px; }
+    .scan-status { margin: 10px 2px 0; min-height: 18px; font-size: 13px; color: var(--muted); }
+    button { font-family: inherit; cursor: pointer; border: none; }
+    .primary-btn {
+      flex: 1; padding: 14px; border-radius: 12px;
+      background: linear-gradient(180deg, var(--accent), #e94f16);
+      color: #fff; font-weight: 700; font-size: 16px;
+    }
+    .secondary-btn {
+      padding: 14px 16px; border-radius: 12px;
+      background: var(--surface-2); color: var(--text);
+      border: 1px solid var(--border); font-weight: 600; font-size: 15px;
+    }
+    .secondary-btn.wide { width: 100%; margin-top: 8px; }
+    .primary-btn:active, .secondary-btn:active { transform: scale(0.98); }
+    .manual { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .manual summary { color: var(--muted); font-size: 14px; cursor: pointer; }
+    .manual-body { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .manual-body label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+    .manual-body input {
+      padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text); font-size: 16px;
+    }
+    /* Result */
+    .result-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    #shoeName { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+    #shoeMeta { margin: 4px 0 0; font-size: 13px; }
+    .badge {
+      flex-shrink: 0; padding: 5px 10px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      font-size: 12px; color: var(--muted); font-weight: 600;
+    }
+    .muted { color: var(--muted); }
+    .fine { font-size: 12px; }
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .price-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+    .input-money {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0 12px;
+    }
+    .input-money i { color: var(--muted); font-style: normal; font-size: 18px; }
+    .input-money input {
+      border: none; background: transparent; color: var(--text);
+      font-size: 22px; font-weight: 700; padding: 12px 0; width: 100%;
+      outline: none;
+    }
+    .verdict { margin-top: 18px; padding: 16px; border-radius: 14px; background: var(--surface-2); }
+    .verdict-score { display: flex; align-items: center; gap: 12px; }
+    .verdict-score span:first-child { font-size: 34px; line-height: 1; }
+    .verdict-score strong { display: block; font-size: 18px; }
+    .verdict-score .muted { font-size: 13px; }
+    .discount-bar {
+      margin-top: 14px; height: 10px; border-radius: 999px;
+      background: color-mix(in srgb, var(--border) 70%, transparent); overflow: hidden;
+    }
+    .discount-fill { height: 100%; width: 0; border-radius: 999px; transition: width .5s ease, background .3s; }
+    .verdict-note { margin: 12px 0 0; font-size: 13px; }
+    .comps { margin-top: 18px; }
+    .comps-title { font-weight: 700; margin: 0 0 10px; font-size: 15px; }
+    .comp-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .comp-links a {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 13px; border-radius: 12px; text-decoration: none;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text); font-weight: 600; font-size: 14px;
+    }
+    .comp-links a:active { transform: scale(0.98); }
+    .comp-links a.full { grid-column: 1 / -1; }
+    .comps .fine { margin-top: 12px; }
+    /* Help dialog */
+    .help {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--surface); color: var(--text);
+      max-width: 460px; width: calc(100% - 32px); padding: 22px;
+    }
+    .help::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(2px); }
+    .help h3 { margin: 0 0 12px; }
+    .help ol { margin: 0 0 14px; padding-left: 20px; line-height: 1.5; font-size: 14px; }
+    .help li { margin-bottom: 8px; }
+    .help .primary-btn { width: 100%; margin-top: 8px; }
+    .foot { text-align: center; padding: 8px 16px calc(var(--safe-b) + 20px); }
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -39,7 +222,7 @@
         <button id="scanBtn" class="primary-btn">Start camera</button>
         <button id="stopBtn" class="secondary-btn" hidden>Stop</button>
       </div>
-      <button id="photoBtn" class="secondary-btn wide">📷 Read a photo instead (OCR)</button>
+      <button id="photoBtn" class="secondary-btn wide">📷 Read a photo instead</button>
       <p id="scanStatus" class="scan-status" aria-live="polite"></p>
       <details class="manual">
         <summary>Camera won't work? Enter it by hand</summary>
@@ -111,7 +294,7 @@
       <li>You get a discount % vs MSRP — a quick sanity check, not the whole story.</li>
       <li>Tap the <strong>StockX / GOAT / eBay sold</strong> links to see what the shoe actually resells for. That's the real "good deal?" answer.</li>
     </ol>
-    <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Camera needs an https:// page (GitHub Pages works).</p>
+    <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Live camera needs an https:// page; if you opened a saved file, use <strong>📷 Read a photo</strong> instead.</p>
     <button id="helpClose" class="primary-btn">Got it</button>
   </dialog>
 
@@ -120,7 +303,439 @@
   <footer class="foot muted fine">Runs entirely on your device · no accounts, no tracking</footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-  <script src="catalog.js"></script>
-  <script src="app.js"></script>
+  <script>
+    // ---- Built-in catalog: known shoes -> name + MSRP ----
+    // Keyed by 12-digit UPC and by style code (no dash). Add more as you scan.
+    window.SHOE_CATALOG = {
+      byUpc: {
+        "193151456335": { name: "Nike Air Tailwind 79", colorway: "Black / White – Team Orange", style: "487754-012", msrp: 90 },
+      },
+      byStyle: {
+        "487754012": { name: "Nike Air Tailwind 79", colorway: "Black / White – Team Orange", style: "487754-012", msrp: 90 },
+      },
+    };
+  </script>
+  <script>
+  /* Kicks Check — scan a shoe box, judge the price. Pure client-side. */
+  (() => {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      video: $("video"), reticle: $("reticle"), placeholder: $("scanPlaceholder"),
+      scanBtn: $("scanBtn"), stopBtn: $("stopBtn"), status: $("scanStatus"),
+      resultCard: $("resultCard"), scanCard: $("scanCard"),
+      shoeName: $("shoeName"), shoeMeta: $("shoeMeta"), idBadge: $("idBadge"),
+      msrp: $("msrpInput"), price: $("priceInput"),
+      verdict: $("verdict"), vEmoji: $("verdictEmoji"), vLabel: $("verdictLabel"),
+      vSub: $("verdictSub"), vNote: $("verdictNote"), discountFill: $("discountFill"),
+      compLinks: $("compLinks"), scanAgain: $("scanAgainBtn"),
+      manualUpc: $("manualUpc"), manualStyle: $("manualStyle"), manualBtn: $("manualBtn"),
+      helpBtn: $("helpBtn"), helpDialog: $("helpDialog"), helpClose: $("helpClose"),
+      photoBtn: $("photoBtn"), ocrFillBtn: $("ocrFillBtn"), ocrInput: $("ocrInput"), ocrStatus: $("ocrStatus"),
+    };
+
+    const CATALOG = window.SHOE_CATALOG || { byUpc: {}, byStyle: {} };
+    let reader = null;
+    let running = false;
+    let current = { name: null, style: null, upc: null, colorway: null };
+
+    /* ---------- Scanning ---------- */
+
+    function makeReader() {
+      const ZX = window.ZXing;
+      const hints = new Map();
+      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
+        ZX.BarcodeFormat.UPC_A, ZX.BarcodeFormat.UPC_E,
+        ZX.BarcodeFormat.EAN_13, ZX.BarcodeFormat.EAN_8, ZX.BarcodeFormat.QR_CODE,
+      ]);
+      hints.set(ZX.DecodeHintType.TRY_HARDER, true);
+      return new ZX.BrowserMultiFormatReader(hints, 400);
+    }
+
+    async function startScan() {
+      if (running) return;
+      if (!window.ZXing) {
+        setStatus("Scanner library didn't load — check your connection, or enter it by hand below.");
+        return;
+      }
+      setStatus("Starting camera…");
+      els.scanBtn.hidden = true;
+      els.stopBtn.hidden = false;
+      try {
+        reader = reader || makeReader();
+        let deviceId = null;
+        try {
+          const devices = await reader.listVideoInputDevices();
+          const back = devices.find((d) => /back|rear|environment/i.test(d.label));
+          deviceId = (back || devices[devices.length - 1] || {}).deviceId || null;
+        } catch (_) {}
+        const onResult = (result) => { if (result) handleScan(result.getText(), result.getBarcodeFormat()); };
+        if (deviceId) {
+          await reader.decodeFromVideoDevice(deviceId, els.video, onResult);
+        } else {
+          await reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" } } }, els.video, onResult);
+        }
+        running = true;
+        els.placeholder.hidden = true;
+        els.reticle.hidden = false;
+        setStatus("Point at the barcode or QR code…");
+      } catch (e) {
+        stopScan();
+        if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) {
+          setStatus("Camera blocked here. On a saved file the live camera can't run — tap “📷 Read a photo instead”.");
+        } else {
+          setStatus("Couldn't start the camera. Try “📷 Read a photo instead”, or enter it by hand.");
+        }
+      }
+    }
+
+    function stopScan() {
+      running = false;
+      try { if (reader) reader.reset(); } catch (_) {}
+      els.scanBtn.hidden = false;
+      els.stopBtn.hidden = true;
+      els.reticle.hidden = true;
+      els.placeholder.hidden = false;
+    }
+
+    let lastValue = null;
+    let lastAt = 0;
+    function handleScan(text, format) {
+      const now = Date.now();
+      if (text === lastValue && now - lastAt < 2500) return;
+      lastValue = text;
+      lastAt = now;
+      if (navigator.vibrate) navigator.vibrate(40);
+      const fmt = String(format || "");
+      if (fmt.includes("QR")) handleQr(text);
+      else identifyByUpc(onlyDigits(text));
+    }
+
+    function handleQr(text) {
+      const styleMatch = text.match(/\b([A-Z]{2}\d{4}|\d{6})[-\s]?(\d{3})\b/);
+      if (styleMatch) identifyByStyle(styleMatch[1] + styleMatch[2]);
+      if (/^https?:\/\//i.test(text)) current.qrUrl = text;
+      if (!styleMatch) {
+        showResult({ name: null }, "QR");
+        setStatus("Read a QR code. If it didn't identify the shoe, scan the barcode too.");
+      }
+    }
+
+    // Decode a still photo (used when the live camera can't run, e.g. saved file).
+    // Tries the barcode/QR first, then OCR for the sticker prices.
+    async function decodePhoto(file) {
+      if (!file) return;
+      lastValue = null;
+      let gotId = false;
+      if (window.ZXing) {
+        let url = null;
+        try {
+          url = URL.createObjectURL(file);
+          reader = reader || makeReader();
+          const res = await reader.decodeFromImageUrl(url);
+          if (res) { handleScan(res.getText(), res.getBarcodeFormat()); gotId = true; }
+        } catch (_) {
+          // No barcode found in the image — fall back to OCR only.
+        } finally {
+          if (url) URL.revokeObjectURL(url);
+        }
+      }
+      await runOcr(file, gotId ? "fill" : "identify");
+    }
+
+    /* ---------- Identify ---------- */
+
+    function identifyByUpc(upc) {
+      if (!upc || upc.length < 8) {
+        setStatus("That didn't look like a valid barcode. Try again, steady and close.");
+        return;
+      }
+      current.upc = upc;
+      const hit = CATALOG.byUpc[upc];
+      showResult(hit || { name: null }, hit ? "Matched" : "Scanned");
+    }
+
+    function identifyByStyle(styleDigits) {
+      const key = onlyAlnum(styleDigits).toUpperCase();
+      current.style = key;
+      const hit = CATALOG.byStyle[key];
+      showResult(hit || { name: null, style: prettyStyle(key) }, hit ? "Matched" : "Scanned");
+    }
+
+    /* ---------- Result UI ---------- */
+
+    function showResult(shoe, badge) {
+      stopScan();
+      current.name = shoe.name || current.name || null;
+      current.style = shoe.style || current.style || (current.style ? prettyStyle(current.style) : null);
+      current.colorway = shoe.colorway || current.colorway || null;
+
+      els.scanCard.hidden = true;
+      els.resultCard.hidden = false;
+      els.idBadge.textContent = badge || "Scanned";
+
+      if (shoe.name) {
+        els.shoeName.textContent = shoe.name;
+        const bits = [shoe.colorway, prettyStyle(shoe.style)].filter(Boolean);
+        els.shoeMeta.textContent = bits.join("  ·  ");
+      } else {
+        els.shoeName.textContent = "Unknown shoe";
+        const bits = [];
+        if (current.style) bits.push("Style " + prettyStyle(current.style));
+        if (current.upc) bits.push("UPC " + current.upc);
+        els.shoeMeta.textContent = bits.length
+          ? bits.join("  ·  ") + " — confirm the MSRP below"
+          : "Enter the MSRP printed on the box";
+      }
+      if (shoe.msrp) els.msrp.value = shoe.msrp;
+      els.price.focus({ preventScroll: true });
+      buildCompLinks();
+      updateVerdict();
+      els.resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function buildCompLinks() {
+      const enc = encodeURIComponent(searchTerms());
+      const links = [
+        { label: "eBay sold", url: `https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1` },
+        { label: "StockX", url: `https://stockx.com/search?s=${enc}` },
+        { label: "GOAT", url: `https://www.goat.com/search?query=${enc}` },
+        { label: "Google Shopping", url: `https://www.google.com/search?tbm=shop&q=${enc}` },
+      ];
+      if (current.qrUrl) links.push({ label: "Open box QR link ↗", url: current.qrUrl, full: true });
+      els.compLinks.innerHTML = "";
+      links.forEach((l) => {
+        const a = document.createElement("a");
+        a.href = l.url; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = l.label;
+        if (l.full) a.className = "full";
+        els.compLinks.appendChild(a);
+      });
+    }
+
+    function searchTerms() {
+      if (current.name) return [current.name, prettyStyle(current.style)].filter(Boolean).join(" ");
+      if (current.style) return "sneaker " + prettyStyle(current.style);
+      if (current.upc) return current.upc;
+      return "sneaker";
+    }
+
+    /* ---------- Verdict ---------- */
+
+    function num(v) {
+      const n = parseFloat(String(v).replace(/[^0-9.]/g, ""));
+      return isFinite(n) ? n : NaN;
+    }
+
+    function updateVerdict() {
+      const msrp = num(els.msrp.value);
+      const price = num(els.price.value);
+      if (!(msrp > 0) || !(price >= 0)) { els.verdict.hidden = true; return; }
+      els.verdict.hidden = false;
+
+      const off = (msrp - price) / msrp;
+      const pct = Math.round(off * 100);
+      els.discountFill.style.width = Math.max(0, Math.min(100, pct)) + "%";
+
+      let emoji, label, color, note;
+      if (price >= msrp) {
+        emoji = "🚩"; label = "At or above retail"; color = "var(--bad)";
+        note = "No discount off MSRP. Only worth it if resale runs higher — check the sold links.";
+      } else if (off >= 0.5) {
+        emoji = "🔥"; label = `Great — ${pct}% off MSRP`; color = "var(--good)";
+        note = "Steep discount. Still confirm resale isn't even lower for this model.";
+      } else if (off >= 0.3) {
+        emoji = "✅"; label = `Good — ${pct}% off MSRP`; color = "var(--good)";
+        note = "Solid outlet-level discount for a general release.";
+      } else if (off >= 0.15) {
+        emoji = "🤔"; label = `Okay — ${pct}% off MSRP`; color = "var(--ok)";
+        note = "Modest discount. Common shoes often sell for less on resale — check first.";
+      } else {
+        emoji = "😐"; label = `Small — ${pct}% off MSRP`; color = "var(--ok)";
+        note = "Barely a discount. Worth comparing against sold listings before buying.";
+      }
+      els.vEmoji.textContent = emoji;
+      els.vLabel.textContent = label;
+      els.vSub.textContent = `$${price.toFixed(2)} vs $${msrp.toFixed(2)} MSRP`;
+      els.vNote.textContent = note;
+      els.discountFill.style.background = color;
+    }
+
+    /* ---------- OCR (on-device, lazy-loaded) ---------- */
+
+    const TESSERACT_SRC = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+    let tessLoading = null;
+
+    function loadTesseract() {
+      if (window.Tesseract) return Promise.resolve();
+      if (tessLoading) return tessLoading;
+      tessLoading = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = TESSERACT_SRC;
+        s.onload = () => resolve();
+        s.onerror = () => { tessLoading = null; reject(new Error("tesseract load failed")); };
+        document.head.appendChild(s);
+      });
+      return tessLoading;
+    }
+
+    async function runOcr(file, mode) {
+      const statusEl = mode === "fill" ? els.ocrStatus : els.status;
+      if (!file) return;
+      try {
+        setEl(statusEl, "Loading text reader…");
+        await loadTesseract();
+        setEl(statusEl, "Reading the photo…");
+        const worker = await window.Tesseract.createWorker("eng", 1, {
+          logger: (m) => {
+            if (m && m.status === "recognizing text") {
+              setEl(statusEl, `Reading… ${Math.round((m.progress || 0) * 100)}%`);
+            }
+          },
+        });
+        const { data } = await worker.recognize(file);
+        await worker.terminate();
+        applyOcr((data && data.text) || "", mode, statusEl);
+      } catch (e) {
+        setEl(statusEl, "Couldn't read that photo. Try again in better light, or type the price in.");
+      }
+    }
+
+    function priceList(text) {
+      return [...text.matchAll(/(\d{1,4}\.\d{2})/g)].map((m) => parseFloat(m[1])).filter((n) => n > 0 && n < 100000);
+    }
+
+    function nearestPrice(text, kw) {
+      const i = text.indexOf(kw);
+      if (i < 0) return null;
+      let best = null, bd = Infinity;
+      for (const m of text.matchAll(/(\d{1,4}\.\d{2})/g)) {
+        const d = Math.abs(m.index - i);
+        if (d < bd) { bd = d; best = parseFloat(m[1]); }
+      }
+      return best;
+    }
+
+    function applyOcr(text, mode, statusEl) {
+      const up = text.toUpperCase();
+
+      const sm = up.match(/\b(\d{6})[-\s]?(\d{3})\b/);
+      let identified = false;
+      if (sm && (mode === "identify" || !current.name)) {
+        const key = sm[1] + sm[2];
+        if (CATALOG.byStyle[key]) { identifyByStyle(key); identified = true; }
+        else current.style = key;
+      }
+
+      let msrp = nearestPrice(up, "WAS");
+      if (msrp == null) msrp = nearestPrice(up, "RETAIL");
+      if (msrp == null) msrp = nearestPrice(up, "SUGG");
+      let now = nearestPrice(up, "NOW");
+      if (now == null) now = nearestPrice(up, "OUR");
+
+      const all = priceList(up);
+      let fillMsrp = msrp, fillPrice = now;
+      if (all.length === 1) {
+        if (fillPrice == null) fillPrice = all[0];
+        if (fillMsrp === all[0] && fillPrice === all[0]) fillMsrp = null;
+      } else if (all.length >= 2) {
+        const uniq = [...new Set(all)].sort((a, b) => b - a);
+        if (fillMsrp == null) fillMsrp = uniq[0];
+        if (fillPrice == null) fillPrice = uniq[uniq.length - 1];
+      }
+
+      if (mode === "identify" && !identified) {
+        showResult({ name: current.name || null, style: current.style || null }, "Read");
+      }
+
+      if (fillMsrp != null && !els.msrp.value) els.msrp.value = fillMsrp.toFixed(2);
+      if (fillPrice != null) els.price.value = fillPrice.toFixed(2);
+      buildCompLinks();
+      updateVerdict();
+
+      if (fillPrice == null && fillMsrp == null) setEl(statusEl, "Read the photo but couldn't spot a price — type it in.");
+      else setEl(statusEl, "Filled from the photo — double-check the numbers.");
+    }
+
+    /* ---------- Helpers ---------- */
+
+    function onlyDigits(s) { return String(s).replace(/\D/g, ""); }
+    function onlyAlnum(s) { return String(s).replace(/[^a-zA-Z0-9]/g, ""); }
+    function prettyStyle(s) {
+      if (!s) return "";
+      const k = onlyAlnum(s).toUpperCase();
+      if (/^[A-Z0-9]{6}\d{3}$/.test(k)) return k.slice(0, 6) + "-" + k.slice(6);
+      return s;
+    }
+    function setStatus(msg) { els.status.textContent = msg; }
+    function setEl(el, msg) { if (el) el.textContent = msg; }
+
+    function resetToScan() {
+      current = { name: null, style: null, upc: null, colorway: null };
+      lastValue = null;
+      els.msrp.value = ""; els.price.value = "";
+      els.manualUpc.value = ""; els.manualStyle.value = "";
+      setEl(els.ocrStatus, "");
+      els.verdict.hidden = true;
+      els.resultCard.hidden = true;
+      els.scanCard.hidden = false;
+      setStatus("");
+      if (isSavedFile) showSavedFileHint();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* ---------- Events ---------- */
+
+    els.scanBtn.addEventListener("click", startScan);
+    els.stopBtn.addEventListener("click", () => { stopScan(); setStatus(""); });
+    els.scanAgain.addEventListener("click", resetToScan);
+    els.msrp.addEventListener("input", updateVerdict);
+    els.price.addEventListener("input", updateVerdict);
+
+    els.manualBtn.addEventListener("click", () => {
+      const upc = onlyDigits(els.manualUpc.value);
+      const style = els.manualStyle.value.trim();
+      if (style) { current.upc = upc || null; identifyByStyle(style); }
+      else if (upc) identifyByUpc(upc);
+      else setStatus("Type a barcode number or a style code first.");
+    });
+
+    // OCR / photo: one hidden file input, reused by both entry points.
+    let ocrMode = "identify";
+    els.photoBtn.addEventListener("click", () => {
+      stopScan();
+      ocrMode = "identify";
+      els.ocrInput.value = "";
+      els.ocrInput.click();
+    });
+    els.ocrFillBtn.addEventListener("click", () => {
+      ocrMode = "fill";
+      els.ocrInput.value = "";
+      els.ocrInput.click();
+    });
+    els.ocrInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (ocrMode === "identify") decodePhoto(file);
+      else runOcr(file, "fill");
+    });
+
+    els.helpBtn.addEventListener("click", () => els.helpDialog.showModal());
+    els.helpClose.addEventListener("click", () => els.helpDialog.close());
+    els.helpDialog.addEventListener("click", (e) => { if (e.target === els.helpDialog) els.helpDialog.close(); });
+
+    document.addEventListener("visibilitychange", () => { if (document.hidden && running) stopScan(); });
+
+    /* ---------- Saved-file mode ---------- */
+    // Opened via file:// (saved HTML) — the live camera can't run, so steer
+    // the user to the photo path, which uses the native camera and works fine.
+    const isSavedFile = location.protocol === "file:";
+    function showSavedFileHint() {
+      setStatus("Opened from a saved file — tap “📷 Read a photo” to scan a box. (The live camera only runs on a hosted https page.)");
+    }
+    if (isSavedFile) showSavedFileHint();
+  })();
+  </script>
 </body>
 </html>

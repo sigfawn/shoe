@@ -28,10 +28,31 @@ There's no free, key-free, browser-usable API for sneaker resale values, so
 rather than fake a number the app sends you straight to the marketplaces where
 the real answer lives.
 
-## Run it on your iPhone
+## Two ways to run it on your iPhone
 
-The camera needs a secure (`https://`) origin. The easiest free host is
-**GitHub Pages**:
+The whole app is a **single self-contained `index.html`** (styles, logic, and
+catalog inlined). It still pulls the scanner/OCR libraries from a CDN, so you
+need internet the first time.
+
+### Option A — just save the file (no hosting)
+
+1. Get `index.html` onto your phone (AirDrop it, email it to yourself, or
+   save it from the repo).
+2. Open it in **Safari** (Files app → tap the file → Share → open in Safari,
+   or "Open in Safari").
+3. Tap **📷 Read a photo** and snap the box label — it decodes the barcode
+   **and** reads the sticker price from one photo.
+
+> **Why photo mode here?** iOS only allows the *live* camera (`getUserMedia`)
+> on a hosted `https://` page — never on a saved `file://` page. The photo
+> path uses the native camera/photo picker, which works from a saved file,
+> so you get the full flow without hosting anything. Option B adds live
+> point-and-scan.
+
+### Option B — host it for live scanning (GitHub Pages)
+
+For live point-at-the-barcode scanning, serve it from a secure origin. The
+easiest free host is **GitHub Pages**:
 
 1. Push this repo to GitHub.
 2. Repo → **Settings → Pages → Build and deployment**.
@@ -51,9 +72,9 @@ python3 -m http.server 8000
 
 ## Adding more shoes
 
-Edit [`catalog.js`](catalog.js). Each entry is keyed by 12-digit UPC and by
-style code (no dash). Unknown shoes still work — you just confirm the MSRP by
-hand.
+Edit the `window.SHOE_CATALOG` block near the bottom of
+[`index.html`](index.html). Each entry is keyed by 12-digit UPC and by style
+code (no dash). Unknown shoes still work — you just confirm the MSRP by hand.
 
 ```js
 byUpc: {
@@ -65,11 +86,8 @@ byUpc: {
 
 | File | Purpose |
 |------|---------|
-| `index.html` | App shell / markup |
-| `styles.css` | Mobile-first styling (dark + light) |
-| `app.js` | Scanning, identification, verdict, links |
-| `catalog.js` | Built-in shoe → MSRP lookup |
-| `manifest.webmanifest`, `icon.svg` | Add-to-Home-Screen support |
+| `index.html` | The whole app — markup, styles, scanning/OCR logic, and the shoe catalog, all in one self-contained file |
+| `manifest.webmanifest`, `icon.svg` | Add-to-Home-Screen support (used when hosted) |
 
 ## Limitations
 
