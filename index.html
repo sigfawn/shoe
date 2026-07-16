@@ -236,7 +236,7 @@
         </div>
         <div id="scanPlaceholder" class="scan-placeholder">
           <div class="scan-icon">📷</div>
-          <p>Scan the barcode or QR code on the shoe box</p>
+          <p>Fill the box with the shoe's label — it reads the name, barcode, and price sticker</p>
         </div>
       </div>
       <div class="scan-controls">
@@ -244,7 +244,7 @@
         <button id="stopBtn" class="secondary-btn" hidden>Stop</button>
       </div>
       <div id="captureStatus" class="capture-status" hidden>
-        <div class="cap-chip" id="capUpc"><span class="dot"></span> UPC <b>…</b></div>
+        <div class="cap-chip" id="capUpc"><span class="dot"></span> Shoe <b>…</b></div>
         <div class="cap-chip" id="capPrice"><span class="dot"></span> Price <b>…</b></div>
       </div>
       <button id="useBtn" class="secondary-btn wide" hidden>Use what I've got →</button>
@@ -287,11 +287,11 @@
       <div class="price-grid">
         <label class="price-field">
           <span>MSRP (retail)</span>
-          <div class="input-money"><i>$</i><input id="msrpInput" inputmode="decimal" placeholder="90.00" /></div>
+          <div class="input-money"><i>$</i><input id="msrpInput" inputmode="decimal" placeholder="0.00" /></div>
         </label>
         <label class="price-field">
           <span>Sticker price</span>
-          <div class="input-money"><i>$</i><input id="priceInput" inputmode="decimal" placeholder="69.99" /></div>
+          <div class="input-money"><i>$</i><input id="priceInput" inputmode="decimal" placeholder="0.00" /></div>
         </label>
       </div>
 
@@ -377,7 +377,8 @@
     let running = false;
     let current = { name: null, style: null, upc: null, colorway: null };
     // What the live loop has captured so far this session.
-    let captured = { upc: null, style: null, price: null, msrp: null };
+    let captured = { upc: null, style: null, name: null, colorway: null, price: null, msrp: null };
+    let nameGraceTimer = null;
 
     /* ---------- On-screen debug log ---------- */
     const DBG_MAX = 400;
@@ -428,7 +429,8 @@
       els.scanBtn.hidden = true;
       els.stopBtn.hidden = false;
       frames = 0; hits = 0; seenErrs.clear();
-      captured = { upc: null, style: null, price: null, msrp: null };
+      captured = { upc: null, style: null, name: null, colorway: null, price: null, msrp: null };
+      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
       els.captureStatus.hidden = false;
       els.useBtn.hidden = true;
       updateChips();
@@ -475,7 +477,7 @@
         running = true;
         els.placeholder.hidden = true;
         els.reticle.hidden = false;
-        setStatus("Scanning… move slowly over the barcode, then the price sticker.");
+        setStatus("Scanning… hold the whole label inside the box: name, barcode, and price sticker.");
         startOcrLoop();
         setTimeout(() => {
           try {
@@ -506,6 +508,7 @@
     function stopScan() {
       running = false;
       stopOcrLoop();
+      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
       try { if (reader) reader.reset(); } catch (_) {}
       els.scanBtn.hidden = false;
       els.stopBtn.hidden = true;
@@ -584,7 +587,7 @@
       if (navigator.vibrate) navigator.vibrate(30);
       dbg("captured UPC " + upc);
       updateChips();
-      maybeFinish();
+      checkProgress();
     }
 
     function setCapturedStyle(styleDigits) {
@@ -593,40 +596,45 @@
       captured.style = key;
       dbg("captured style " + key);
       updateChips();
-      maybeFinish();
+      checkProgress();
     }
 
-    // Parse an OCR frame for a printed style code and the sticker prices.
+    function setCapturedName(name) {
+      if (!name || captured.name) return;
+      captured.name = name;
+      dbg("captured name " + name);
+      if (navigator.vibrate) navigator.vibrate(30);
+      updateChips();
+      checkProgress();
+    }
+
+    // Parse an OCR frame for a printed name, style code, and the sticker prices.
     function ingestOcrText(text) {
       const up = (text || "").toUpperCase();
       const sm = up.match(/\b(\d{6})[-\s]?(\d{3})\b/);
       if (sm && !captured.style) setCapturedStyle(sm[1] + sm[2]);
-
-      let msrp = nearestPrice(up, "WAS");
-      if (msrp == null) msrp = nearestPrice(up, "RETAIL");
-      if (msrp == null) msrp = nearestPrice(up, "SUGG");
-      let now = nearestPrice(up, "NOW");
-      if (now == null) now = nearestPrice(up, "OUR");
-
-      const all = priceList(up);
-      let price = now, m = msrp;
-      if (all.length === 1) {
-        if (price == null) price = all[0];
-        if (m === all[0] && price === all[0]) m = null;
-      } else if (all.length >= 2) {
-        const uniq = [...new Set(all)].sort((a, b) => b - a);
-        if (m == null) m = uniq[0];
-        if (price == null) price = uniq[uniq.length - 1];
-      }
-      if (price != null && captured.price == null) {
-        captured.price = price;
-        if (m != null) captured.msrp = m;
-        if (navigator.vibrate) navigator.vibrate(30);
-        dbg("captured price " + price + (m != null ? " / msrp " + m : ""));
-        updateChips();
-        maybeFinish();
+      if (!captured.name) { const nm = extractName(text || ""); if (nm) setCapturedName(nm); }
+      if (captured.price == null) {
+        const pr = parseStickerPrices(text || "");
+        if (pr.price != null) {
+          captured.price = pr.price;
+          if (pr.msrp != null) captured.msrp = pr.msrp;
+          if (navigator.vibrate) navigator.vibrate(30);
+          dbg("captured price " + pr.price + (pr.msrp != null ? " / msrp " + pr.msrp : ""));
+          updateChips();
+          checkProgress();
+        }
       }
     }
+
+    // The catalog entry for what we've captured, if any (bonus MSRP for known shoes).
+    function catalogHit() {
+      if (captured.upc && CATALOG.byUpc[captured.upc]) return CATALOG.byUpc[captured.upc];
+      if (captured.style && CATALOG.byStyle[captured.style]) return CATALOG.byStyle[captured.style];
+      return null;
+    }
+    // We can name the shoe once OCR reads its name, or the barcode matches the catalog.
+    function hasIdentity() { return !!(captured.name || catalogHit()); }
 
     function setChip(el, ok, txt) {
       el.classList.toggle("found", ok);
@@ -634,37 +642,79 @@
     }
 
     function updateChips() {
-      const upcOk = !!(captured.upc || captured.style);
-      setChip(els.capUpc, upcOk, upcOk ? (captured.upc || prettyStyle(captured.style)) : "scanning…");
+      const hit = catalogHit();
+      const idName = (hit && hit.name) || captured.name;
+      const idOk = !!(idName || captured.upc || captured.style);
+      const idTxt = idName || captured.upc || prettyStyle(captured.style) || "scanning…";
+      setChip(els.capUpc, idOk, idTxt);
       const priceOk = captured.price != null;
       setChip(els.capPrice, priceOk, priceOk ? ("$" + captured.price.toFixed(2)) : "scanning…");
-      els.useBtn.hidden = !(upcOk || priceOk);
+      els.useBtn.hidden = !(idOk || priceOk);
     }
 
-    function maybeFinish() {
-      if ((captured.upc || captured.style) && captured.price != null) finalizeCapture();
+    // Decide when to stop. We want a name/identity AND a price. If we have the
+    // name but no price after a grace period, finish anyway — never freeze on a
+    // half-read, and never fall back to a useless "unknown" screen.
+    function checkProgress() {
+      if (hasIdentity() && captured.price != null) { finalizeCapture(); return; }
+      if (hasIdentity() && !nameGraceTimer) {
+        nameGraceTimer = setTimeout(() => {
+          nameGraceTimer = null;
+          if (running) { dbg("grace elapsed — finishing with what's read"); finalizeCapture(); }
+        }, 5000);
+      }
     }
 
     function finalizeCapture() {
+      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
       stopScan();
-      let shoe = null;
-      if (captured.upc && CATALOG.byUpc[captured.upc]) shoe = CATALOG.byUpc[captured.upc];
-      else if (captured.style && CATALOG.byStyle[captured.style]) shoe = CATALOG.byStyle[captured.style];
+      const hit = catalogHit();
+      const name = (hit && hit.name) || captured.name || null;
+      const colorway = (hit && hit.colorway) || captured.colorway || null;
+      const style = (hit && hit.style) || captured.style || null;
+      const msrp = (hit && hit.msrp != null) ? hit.msrp : captured.msrp;
 
       current.upc = captured.upc || current.upc;
-      if (captured.style) current.style = captured.style;
+      if (style) current.style = style;
 
       showResult(
-        shoe || { name: null, style: captured.style ? prettyStyle(captured.style) : null },
-        shoe ? "Matched" : (captured.upc ? "Scanned" : "Read")
+        { name: name, colorway: colorway, style: style, msrp: msrp },
+        hit ? "Matched" : (name ? "Read" : (captured.upc ? "Scanned" : "Read"))
       );
-      if (captured.msrp != null && !els.msrp.value) els.msrp.value = captured.msrp.toFixed(2);
+      if (msrp != null && !els.msrp.value) els.msrp.value = Number(msrp).toFixed(2);
       if (captured.price != null) els.price.value = captured.price.toFixed(2);
       buildCompLinks();
       updateVerdict();
     }
 
-    // Background loop: OCR the current video frame until a price is found.
+    // Crop the framed label region, upscale, and grayscale+contrast it so the
+    // OCR actually resolves the small print. Raw full-frame OCR reads as noise.
+    const ocrCanvas = document.createElement("canvas");
+    function grabOcrFrame() {
+      const v = els.video, vw = v.videoWidth, vh = v.videoHeight;
+      if (!vw) return null;
+      // Crop to roughly the on-screen reticle box (where the user aims the label).
+      const cx = Math.round(vw * 0.08), cy = Math.round(vh * 0.12);
+      const cw0 = Math.round(vw * 0.84), ch0 = Math.round(vh * 0.72);
+      const scale = Math.min(3, 1400 / cw0);
+      const cw = Math.max(1, Math.round(cw0 * scale)), ch = Math.max(1, Math.round(ch0 * scale));
+      ocrCanvas.width = cw; ocrCanvas.height = ch;
+      const ctx = ocrCanvas.getContext("2d");
+      ctx.drawImage(v, cx, cy, cw0, ch0, 0, 0, cw, ch);
+      try {
+        const img = ctx.getImageData(0, 0, cw, ch), d = img.data, C = 1.4, I = 128 * (1 - C);
+        for (let i = 0; i < d.length; i += 4) {
+          let g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          g = g * C + I; g = g < 0 ? 0 : g > 255 ? 255 : g;
+          d[i] = d[i + 1] = d[i + 2] = g;
+        }
+        ctx.putImageData(img, 0, 0);
+      } catch (_) { /* frame not ready */ }
+      return ocrCanvas;
+    }
+
+    // Background loop: keep OCR-reading the framed label until we have both a
+    // name/identity and a price (or the grace timer finishes us).
     let ocrWorker = null;
     let ocrLoopOn = false;
     async function startOcrLoop() {
@@ -675,22 +725,19 @@
         if (!ocrWorker) ocrWorker = await window.Tesseract.createWorker("eng", 1);
         ocrLoopOn = true;
         dbg("OCR loop started");
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
         while (ocrLoopOn && running) {
-          if (captured.price == null && els.video.videoWidth) {
-            const vw = els.video.videoWidth, vh = els.video.videoHeight;
-            const maxW = 1280;
-            let cw = vw, ch = vh;
-            if (vw > maxW) { const k = maxW / vw; cw = Math.round(vw * k); ch = Math.round(vh * k); }
-            canvas.width = cw; canvas.height = ch;
-            ctx.drawImage(els.video, 0, 0, cw, ch);
-            try {
-              const { data } = await ocrWorker.recognize(canvas);
-              ingestOcrText(data && data.text || "");
-            } catch (e) { dbg("OCR frame err: " + (e.message || e)); }
+          const needName = !hasIdentity();
+          const needPrice = captured.price == null;
+          if ((needName || needPrice) && els.video.videoWidth) {
+            const cv = grabOcrFrame();
+            if (cv) {
+              try {
+                const { data } = await ocrWorker.recognize(cv);
+                ingestOcrText(data && data.text || "");
+              } catch (e) { dbg("OCR frame err: " + (e.message || e)); }
+            }
           }
-          await sleep(captured.price == null ? 250 : 1500);
+          await sleep((!hasIdentity() || captured.price == null) ? 250 : 1500);
         }
         dbg("OCR loop stopped");
       } catch (e) {
@@ -731,20 +778,25 @@
       els.resultCard.hidden = false;
       els.idBadge.textContent = badge || "Scanned";
 
+      const style = shoe.style || current.style || null;
       if (shoe.name) {
+        // Real name (from OCR or the catalog).
         els.shoeName.textContent = shoe.name;
-        const bits = [shoe.colorway, prettyStyle(shoe.style)].filter(Boolean);
-        els.shoeMeta.textContent = bits.join("  ·  ");
-      } else {
-        els.shoeName.textContent = "Unknown shoe";
-        const bits = [];
-        if (current.style) bits.push("Style " + prettyStyle(current.style));
+        const bits = [shoe.colorway, prettyStyle(style)].filter(Boolean);
         if (current.upc) bits.push("UPC " + current.upc);
-        els.shoeMeta.textContent = bits.length
-          ? bits.join("  ·  ") + " — confirm the MSRP below"
-          : "Enter the MSRP printed on the box";
+        els.shoeMeta.textContent = bits.join("  ·  ");
+      } else if (style) {
+        // No name read, but we have a style code — show that, not "unknown".
+        els.shoeName.textContent = "Style " + prettyStyle(style);
+        els.shoeMeta.textContent = current.upc ? ("UPC " + current.upc) : "Couldn't read the name — details below";
+      } else if (current.upc) {
+        els.shoeName.textContent = "UPC " + current.upc;
+        els.shoeMeta.textContent = "Couldn't read the name — details below";
+      } else {
+        els.shoeName.textContent = "Enter the details";
+        els.shoeMeta.textContent = "";
       }
-      if (shoe.msrp) els.msrp.value = shoe.msrp;
+      if (shoe.msrp) els.msrp.value = Number(shoe.msrp).toFixed(2);
       els.price.focus({ preventScroll: true });
       buildCompLinks();
       updateVerdict();
@@ -873,6 +925,58 @@
       return best;
     }
 
+    function parseStickerPrices(text) {
+      const up = String(text).toUpperCase();
+      let msrp = nearestPrice(up, "WAS");
+      if (msrp == null) msrp = nearestPrice(up, "RETAIL");
+      if (msrp == null) msrp = nearestPrice(up, "SUGG");
+      let now = nearestPrice(up, "NOW");
+      if (now == null) now = nearestPrice(up, "OUR");
+      const all = priceList(up);
+      let m = msrp, p = now;
+      if (all.length === 1) {
+        if (p == null) p = all[0];
+        if (m === all[0] && p === all[0]) m = null;
+      } else if (all.length >= 2) {
+        const uniq = [...new Set(all)].sort((a, b) => b - a);
+        if (m == null) m = uniq[0];
+        if (p == null) p = uniq[uniq.length - 1];
+      }
+      return { msrp: m, price: p };
+    }
+
+    // Pull the shoe's model name off the box label from OCR text. The name is
+    // the topmost line of real words — skip size/country/price/colorway noise,
+    // and clean token-by-token so a column-merged "NAME  SUGG. RETAIL" still works.
+    const NAME_BLOCK = new Set(["SUGG", "SUGG.", "RETAIL", "OUR", "PRICE", "WAS", "NOW", "MADE",
+      "FABRIQUE", "FABRICADO", "HECHO", "EN", "IN", "BY", "UK", "BR", "EUR", "CM", "US", "MM",
+      "QTY", "STYLE", "SIZE", "TAILLE", "NOIR", "BLANC", "BLACK", "WHITE", "ORANGE", "TEAM",
+      "EQUIPE", "GREY", "GRAY", "RED", "BLUE", "GREEN", "PINK", "BROWN", "PURPLE", "YELLOW"]);
+    const NAME_COUNTRY = /INDONES|VIETNAM|CHINA|THAILAND|CAMBODIA|FABRI|HECHO|\bMADE\b/i;
+    function extractName(text) {
+      for (const raw of String(text).split("\n")) {
+        if (NAME_COUNTRY.test(raw)) continue;
+        const toks = raw.replace(/[|=—_~`*]/g, " ").replace(/[^A-Za-z0-9.&\- ]/g, " ").split(/\s+/).filter(Boolean);
+        const kept = [];
+        for (const t of toks) {
+          const up = t.toUpperCase().replace(/\.$/, "");
+          const letters = (t.match(/[A-Za-z]/g) || []).length;
+          const digits = (t.match(/[0-9]/g) || []).length;
+          if (NAME_BLOCK.has(up) || NAME_BLOCK.has(t.toUpperCase())) continue;
+          if (letters === 0) { if (digits > 0 && digits <= 3 && kept.length > 0) kept.push(t); continue; }
+          if (!/^[A-Za-z]/.test(t)) continue;   // name tokens start with a letter
+          if (letters >= 2) kept.push(t);
+        }
+        if (kept.length < 2) continue;
+        const cand = kept.join(" ").replace(/\s+/g, " ").trim();
+        const letters = (cand.match(/[A-Za-z]/g) || []).length;
+        const words = kept.filter((t) => /[A-Za-z]{2,}/.test(t)).length;
+        if (letters < 6 || words < 2 || cand.length > 40) continue;
+        return cand;
+      }
+      return null;
+    }
+
     function applyOcr(text, mode, statusEl) {
       const up = text.toUpperCase();
 
@@ -883,26 +987,14 @@
         if (CATALOG.byStyle[key]) { identifyByStyle(key); identified = true; }
         else current.style = key;
       }
+      // Read the model name off the label if the barcode didn't identify it.
+      if (!current.name) { const nm = extractName(text || ""); if (nm) current.name = nm; }
 
-      let msrp = nearestPrice(up, "WAS");
-      if (msrp == null) msrp = nearestPrice(up, "RETAIL");
-      if (msrp == null) msrp = nearestPrice(up, "SUGG");
-      let now = nearestPrice(up, "NOW");
-      if (now == null) now = nearestPrice(up, "OUR");
-
-      const all = priceList(up);
-      let fillMsrp = msrp, fillPrice = now;
-      if (all.length === 1) {
-        if (fillPrice == null) fillPrice = all[0];
-        if (fillMsrp === all[0] && fillPrice === all[0]) fillMsrp = null;
-      } else if (all.length >= 2) {
-        const uniq = [...new Set(all)].sort((a, b) => b - a);
-        if (fillMsrp == null) fillMsrp = uniq[0];
-        if (fillPrice == null) fillPrice = uniq[uniq.length - 1];
-      }
+      const pr = parseStickerPrices(text || "");
+      const fillMsrp = pr.msrp, fillPrice = pr.price;
 
       if (mode === "identify" && !identified) {
-        showResult({ name: current.name || null, style: current.style || null }, "Read");
+        showResult({ name: current.name || null, style: current.style || null }, current.name ? "Read" : "Scanned");
       }
 
       if (fillMsrp != null && !els.msrp.value) els.msrp.value = fillMsrp.toFixed(2);
@@ -929,7 +1021,8 @@
 
     function resetToScan() {
       current = { name: null, style: null, upc: null, colorway: null };
-      captured = { upc: null, style: null, price: null, msrp: null };
+      captured = { upc: null, style: null, name: null, colorway: null, price: null, msrp: null };
+      if (nameGraceTimer) { clearTimeout(nameGraceTimer); nameGraceTimer = null; }
       lastValue = null;
       els.msrp.value = ""; els.price.value = "";
       els.manualUpc.value = ""; els.manualStyle.value = "";

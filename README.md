@@ -15,13 +15,16 @@ uploaded. Just static files you host anywhere with HTTPS.
    readout as each is found. When it has both, it jumps to the result
    automatically; you can also tap **Use what I've got** at any point. All
    on-device.
-2. **Identifies** the shoe from a small built-in catalog (name + MSRP), or
-   falls back to showing the raw style/UPC for unknown shoes.
-3. **Discount check** — enter the in-store sticker price (or tap **📷
-   Auto-fill from a sticker photo** to read it with on-device OCR via
-   [Tesseract.js](https://github.com/naptha/tesseract.js)) and it shows the
-   percentage off MSRP with a plain-English verdict. OCR also reads the style
-   code off the label as a second way to identify the shoe.
+2. **Identifies** the shoe by **reading the model name off the label with OCR**
+   ([Tesseract.js](https://github.com/naptha/tesseract.js)) — so it works for
+   *any* box, not just ones in the tiny built-in catalog. If the barcode
+   happens to match the catalog it also fills the official MSRP. It never
+   stops on a useless "unknown shoe" screen: it keeps re-reading until it has a
+   real name, then shows that (plus the style code / UPC it read).
+3. **Discount check** — the store sticker's "WAS" price *is* the MSRP, so for
+   sale stickers it can fill both numbers itself. Otherwise type the sticker
+   price (or tap **📷 Auto-fill from a sticker photo** for a tight, reliable
+   read). Then it shows the percentage off MSRP with a plain-English verdict.
 4. **Real resale comps** — one-tap links to **eBay sold listings, StockX,
    GOAT, and Google Shopping** for the exact model. This is the honest answer
    to "is it a good price?", because the box only knows MSRP, not resale value.
@@ -100,6 +103,12 @@ byUpc: {
   for the true market picture.
 - The camera decoder (and OCR) needs decent light and a steady, close shot.
 - OCR runs on-device and downloads its model (~a few MB) the first time you
-  use it; accuracy varies with lighting and glare on the sticker.
+  use it. **Fill the frame with the label** — the app crops, upscales, and
+  contrast-boosts that region before reading it; a label that's small in the
+  frame won't resolve.
+- Reading the model **name** is reliable; reading the tiny **price sticker**
+  live is hit-or-miss (small text, strikethrough on the "WAS" price). If the
+  price doesn't auto-fill, type it or use **📷 Auto-fill from a sticker photo**
+  for a close-up.
 - The built-in catalog is a starter set; most boxes will scan as "Unknown"
   until you add them (the app still works, you just confirm the MSRP).
