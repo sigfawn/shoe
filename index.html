@@ -194,6 +194,15 @@
     .help li { margin-bottom: 8px; }
     .help .primary-btn { width: 100%; margin-top: 8px; }
     .foot { text-align: center; padding: 8px 16px calc(var(--safe-b) + 20px); }
+    .dbg {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 11px; line-height: 1.45;
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 42vh; overflow: auto; margin: 0;
+      background: #000; color: #7CFC7C; padding: 10px; border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .dbg-row { display: flex; gap: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -234,6 +243,16 @@
             <input id="manualStyle" placeholder="e.g. 487754-012" />
           </label>
           <button id="manualBtn" class="secondary-btn">Look it up</button>
+        </div>
+      </details>
+      <details id="dbgWrap" class="manual">
+        <summary>🐞 Debug log</summary>
+        <div class="manual-body">
+          <pre id="dbgLog" class="dbg">(start the camera to see logs)</pre>
+          <div class="dbg-row">
+            <button id="dbgCopy" class="secondary-btn">Copy log</button>
+            <button id="dbgClear" class="secondary-btn">Clear</button>
+          </div>
         </div>
       </details>
     </section>
@@ -340,6 +359,28 @@
     let running = false;
     let current = { name: null, style: null, upc: null, colorway: null };
 
+    /* ---------- On-screen debug log ---------- */
+    const DBG_MAX = 400;
+    const dbgLines = [];
+    const dbgEl = $("dbgLog");
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function stamp() {
+      const d = new Date();
+      return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()) +
+        "." + String(d.getMilliseconds()).padStart(3, "0");
+    }
+    function dbg(msg) {
+      dbgLines.push(stamp() + "  " + msg);
+      if (dbgLines.length > DBG_MAX) dbgLines.shift();
+      if (dbgEl) { dbgEl.textContent = dbgLines.join("\n"); dbgEl.scrollTop = dbgEl.scrollHeight; }
+    }
+    window.addEventListener("error", (e) =>
+      dbg("JS ERROR: " + (e.message || (e.error && e.error.message) || e.error || "?")));
+    window.addEventListener("unhandledrejection", (e) =>
+      dbg("PROMISE REJECT: " + ((e.reason && e.reason.message) || e.reason || "?")));
+    dbg("app loaded · " + location.protocol + " · UA " + navigator.userAgent.slice(0, 60));
+    dbg("ZXing library " + (window.ZXing ? "loaded" : "NOT loaded"));
+
     /* ---------- Scanning ---------- */
 
     function makeReader() {
@@ -353,37 +394,84 @@
       return new ZX.BrowserMultiFormatReader(hints, 400);
     }
 
+    let frames = 0, hits = 0;
+    const seenErrs = new Set();
+
     async function startScan() {
       if (running) return;
       if (!window.ZXing) {
         setStatus("Scanner library didn't load — check your connection, or enter it by hand below.");
+        dbg("startScan aborted: ZXing not loaded");
         return;
       }
       setStatus("Starting camera…");
       els.scanBtn.hidden = true;
       els.stopBtn.hidden = false;
+      frames = 0; hits = 0; seenErrs.clear();
+      dbg("startScan tapped");
       try {
         reader = reader || makeReader();
         let deviceId = null;
         try {
           const devices = await reader.listVideoInputDevices();
+          dbg("cameras (" + devices.length + "): " +
+            devices.map((d) => (d.label || "(no label)")).join(" | "));
           const back = devices.find((d) => /back|rear|environment/i.test(d.label));
           deviceId = (back || devices[devices.length - 1] || {}).deviceId || null;
-        } catch (_) {}
-        const onResult = (result) => { if (result) handleScan(result.getText(), result.getBarcodeFormat()); };
-        if (deviceId) {
-          await reader.decodeFromVideoDevice(deviceId, els.video, onResult);
-        } else {
-          await reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" } } }, els.video, onResult);
-        }
+          dbg("chosen camera: " + (back ? "rear-labelled" : "last/default") +
+            (deviceId ? " id=" + deviceId.slice(0, 8) + "…" : " (none)"));
+        } catch (err) { dbg("listVideoInputDevices failed: " + (err.name || err.message)); }
+
+        const onResult = (result, err) => {
+          frames++;
+          if (result) {
+            hits++;
+            dbg("DECODED [" + result.getBarcodeFormat() + "] " + result.getText());
+            handleScan(result.getText(), result.getBarcodeFormat());
+          } else if (err) {
+            const nm = err.name || (err.constructor && err.constructor.name) || "err";
+            // NotFoundException fires every empty frame — that's normal, log it once.
+            if (!seenErrs.has(nm)) { seenErrs.add(nm); dbg("scan status: " + nm + " (per-frame; normal if 'NotFound')"); }
+          }
+          if (frames % 10 === 0) {
+            const vw = els.video.videoWidth || 0, vh = els.video.videoHeight || 0;
+            dbg("scanning… " + frames + " frames, " + hits + " codes, video " + vw + "x" + vh);
+            setStatus("Scanning… still looking (" + frames + " frames). Fill the frame with the barcode, good light.");
+          }
+        };
+
+        // Prefer high resolution — low-res frames often can't resolve a UPC.
+        const base = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+        const constraints = deviceId
+          ? { video: Object.assign({ deviceId: { exact: deviceId } }, base) }
+          : { video: Object.assign({ facingMode: { ideal: "environment" } }, base) };
+        dbg("starting decode with constraints: " + JSON.stringify(constraints.video));
+        await reader.decodeFromConstraints(constraints, els.video, onResult);
+
         running = true;
         els.placeholder.hidden = true;
         els.reticle.hidden = false;
         setStatus("Point at the barcode or QR code…");
+        setTimeout(() => {
+          try {
+            const so = els.video.srcObject;
+            const tr = so && so.getVideoTracks && so.getVideoTracks()[0];
+            const s = tr && tr.getSettings ? tr.getSettings() : {};
+            dbg("stream track: " + (s.label || (tr && tr.label) || "?") +
+              " " + (s.width || "?") + "x" + (s.height || "?") + " facing=" + (s.facingMode || "?"));
+            dbg("video el: " + els.video.videoWidth + "x" + els.video.videoHeight +
+              " paused=" + els.video.paused + " readyState=" + els.video.readyState);
+          } catch (err) { dbg("track info err: " + (err.message || err)); }
+        }, 1400);
       } catch (e) {
         stopScan();
+        dbg("startScan FAILED: " + (e.name || "") + " " + (e.message || e));
         if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) {
-          setStatus("Camera blocked here. On a saved file the live camera can't run — tap “📷 Read a photo instead”.");
+          setStatus("Camera blocked. Allow camera access (needs an https page), or tap “📷 Read a photo instead”.");
+        } else if (e && e.name === "NotReadableError") {
+          setStatus("Camera is busy (another app/tab has it). Close that and retry.");
+        } else if (e && e.name === "OverconstrainedError") {
+          setStatus("This camera rejected the settings. Retrying is worth a shot; otherwise use “📷 Read a photo”.");
         } else {
           setStatus("Couldn't start the camera. Try “📷 Read a photo instead”, or enter it by hand.");
         }
@@ -427,6 +515,7 @@
     async function decodePhoto(file) {
       if (!file) return;
       lastValue = null;
+      dbg("photo picked: " + (file.name || "image") + " " + Math.round((file.size || 0) / 1024) + "KB");
       let gotId = false;
       if (window.ZXing) {
         let url = null;
@@ -434,9 +523,13 @@
           url = URL.createObjectURL(file);
           reader = reader || makeReader();
           const res = await reader.decodeFromImageUrl(url);
-          if (res) { handleScan(res.getText(), res.getBarcodeFormat()); gotId = true; }
-        } catch (_) {
-          // No barcode found in the image — fall back to OCR only.
+          if (res) {
+            dbg("photo DECODED [" + res.getBarcodeFormat() + "] " + res.getText());
+            handleScan(res.getText(), res.getBarcodeFormat());
+            gotId = true;
+          }
+        } catch (err) {
+          dbg("photo: no barcode found (" + (err && err.name || "n/a") + "), trying OCR");
         } finally {
           if (url) URL.revokeObjectURL(url);
         }
@@ -719,6 +812,22 @@
       if (!file) return;
       if (ocrMode === "identify") decodePhoto(file);
       else runOcr(file, "fill");
+    });
+
+    // Debug log copy / clear.
+    $("dbgCopy").addEventListener("click", async () => {
+      const text = dbgLines.join("\n") || "(empty)";
+      try { await navigator.clipboard.writeText(text); $("dbgCopy").textContent = "Copied ✓"; }
+      catch (_) {
+        // Clipboard blocked — select the text so the user can long-press → Copy.
+        const r = document.createRange(); r.selectNodeContents(dbgEl);
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        $("dbgCopy").textContent = "Selected — long-press Copy";
+      }
+      setTimeout(() => ($("dbgCopy").textContent = "Copy log"), 2500);
+    });
+    $("dbgClear").addEventListener("click", () => {
+      dbgLines.length = 0; dbgEl.textContent = "(cleared)";
     });
 
     els.helpBtn.addEventListener("click", () => els.helpDialog.showModal());
