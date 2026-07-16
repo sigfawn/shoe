@@ -226,7 +226,7 @@
 
   <div id="toast" class="toast"></div>
   <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden />
-  <footer class="foot muted fine">Runs entirely on your device · no accounts, no tracking</footer>
+  <footer class="foot muted fine">Runs entirely on your device · no accounts, no tracking · <span id="buildTag"></span></footer>
 
   <script>
   /* Kicks Check — OCR a shoe box (name + price), judge it, save to a list. Pure client-side. */
@@ -254,7 +254,9 @@
       if(els.dbgLog){ els.dbgLog.textContent=dbgLines.join("\n"); els.dbgLog.scrollTop=els.dbgLog.scrollHeight; } }
     window.addEventListener("error",(e)=>dbg("JS ERROR: "+(e.message||(e.error&&e.error.message)||e.error||"?")));
     window.addEventListener("unhandledrejection",(e)=>dbg("PROMISE REJECT: "+((e.reason&&e.reason.message)||e.reason||"?")));
-    dbg("app loaded · "+location.protocol+" · "+navigator.userAgent.slice(0,52));
+    const BUILD="r8 · live-detect";
+    dbg("app loaded · BUILD "+BUILD+" · "+location.protocol+" · "+navigator.userAgent.slice(0,52));
+    { const bt=$("buildTag"); if(bt) bt.textContent="build "+BUILD; }
 
     const sleep = (ms) => new Promise((r)=>setTimeout(r,ms));
     const num = (v) => { const n=parseFloat(String(v).replace(/[^0-9.]/g,"")); return isFinite(n)?n:NaN; };
@@ -547,37 +549,41 @@
 
     async function startOcrLoop(){
       if(ocrLoopOn) return;
-      try{
-        setStatus("Loading text reader…"); dbg("OCR loop: loading");
-        await getWorker(); ocrLoopOn=true; dbg("OCR loop started");
-        setStatus("Scanning… just point at the box — it finds the name and price.");
-        while(ocrLoopOn && running){
-          // Name pass (LSTM) until we have it.
-          if(!cap.name && els.video.videoWidth){
-            const cv=grabOcrFrame();
-            if(cv){ try{ const {data}=await ocrWorker.recognize(cv); ingest(data&&data.text||""); }catch(e){ dbg("OCR frame err: "+(e.message||e)); } }
-          }
-          // Price pass (legacy) — AUTO-FIND the sticker (or a tapped override),
-          // OCR the top candidates, and vote. Just point the camera.
-          if(cap.price==null && els.video.videoWidth){
-            const regions = manualBox ? [manualBox] : detectStickerRegions();
-            if(!regions.length){ els.priceBox.hidden=true; els.pvVote.textContent="Looking for a price sticker… (point at the box)"; }
-            else {
-              showFoundBox(regions[0]);
-              for(let ri=0; ri<Math.min(2,regions.length) && cap.price==null; ri++){
-                const cv=grabRegion(regions[ri], ri===0);
-                if(!cv) continue;
-                if(lastSharp<SHARP_MIN){ if(ri===0) els.pvVote.textContent="Too blurry — hold steady."; continue; }
-                try{ const w=await getPriceWorker(); const {data}=await w.recognize(cv); votePrice(data); }
-                catch(e){ dbg("price OCR err: "+(e.message||e)); }
-              }
+      ocrLoopOn=true;
+      dbg("loop started — detection is LIVE now; OCR engines load in the background");
+      setStatus("Scanning… point at the box. Finding the price sticker…");
+      // Load OCR engines in the BACKGROUND so detection + preview never wait on them.
+      getWorker().then(()=>dbg("name engine ready ✓")).catch(e=>dbg("name engine FAILED: "+(e.name||"")+" "+(e.message||e)));
+      getPriceWorker().then(()=>dbg("price engine ready ✓")).catch(e=>dbg("price engine FAILED: "+(e.name||"")+" "+(e.message||e)));
+      let tick=0;
+      while(ocrLoopOn && running){
+        tick++;
+        // 1) DETECTION + PREVIEW — pure canvas, runs immediately (no OCR needed).
+        let regions=[];
+        if(cap.price==null && els.video.videoWidth){
+          regions = manualBox ? [manualBox] : detectStickerRegions();
+          if(!regions.length){ els.priceBox.hidden=true; els.pvVote.textContent="Looking for a coloured price sticker… (point at the box)"; }
+          else {
+            showFoundBox(regions[0]);
+            for(let ri=0; ri<Math.min(2,regions.length) && cap.price==null; ri++){
+              const cv=grabRegion(regions[ri], ri===0);   // draws the preview for the top region
+              if(!cv) continue;
+              if(!priceWorker){ if(ri===0) els.pvVote.textContent="Loading the price reader…"; continue; }
+              if(lastSharp<SHARP_MIN){ if(ri===0) els.pvVote.textContent="Hold steady — too blurry (sharpness "+Math.round(lastSharp)+")"; continue; }
+              try{ const {data}=await priceWorker.recognize(cv); votePrice(data); }
+              catch(e){ dbg("price OCR err: "+(e.message||e)); }
             }
           }
-          await sleep(cap.name ? 180 : 260);
+          if(tick%10===0) dbg("detect: "+regions.length+" region(s), sharp="+Math.round(lastSharp)+", nameEngine="+(ocrWorker?"y":"n")+", priceEngine="+(priceWorker?"y":"n"));
         }
-        dbg("OCR loop stopped");
-      }catch(e){ ocrLoopOn=false; dbg("OCR loop failed: "+(e.message||e));
-        setStatus("Couldn't load the text reader. Check your connection, or add a box by hand."); }
+        // 2) NAME OCR — only once the LSTM engine is loaded.
+        if(!cap.name && ocrWorker && els.video.videoWidth){
+          const cv=grabOcrFrame();
+          if(cv){ try{ const {data}=await ocrWorker.recognize(cv); ingest(data&&data.text||""); }catch(e){ dbg("name OCR err: "+(e.message||e)); } }
+        }
+        await sleep(cap.name ? 160 : 240);
+      }
+      dbg("loop stopped");
     }
 
     function ingest(text){
