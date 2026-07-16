@@ -144,7 +144,7 @@
 
       <div id="savePrompt" class="save-prompt" hidden>
         <h4 id="promptName">—</h4>
-        <p class="sub">Got the name, but couldn't read the price. Type it (or hold the sticker closer and it'll keep trying).</p>
+        <p class="sub">Name's in ✓ — type the sticker's <strong>now/our-price</strong>, and its <strong>was/retail</strong> price if you want the % off. Enter saves.</p>
         <div class="prompt-row">
           <label class="prompt-field">Sticker price
             <div class="input-money"><i>$</i><input id="promptPrice" inputmode="decimal" placeholder="0.00" /></div>
@@ -196,8 +196,8 @@
     <h3>How it works</h3>
     <ol>
       <li>Point the camera so the shoe's <strong>label fills the frame</strong> — name, size box, and the price sticker.</li>
-      <li>It reads the <strong>model name</strong> and the <strong>sticker price</strong> on the fly. Two ✓ chips show what it has.</li>
-      <li>When it has both, it <strong>saves the box</strong> and you move to the next one. Can't read the price? Type it.</li>
+      <li>It reads the <strong>model name</strong> on the fly (hold steady a second — the Name chip goes green).</li>
+      <li>Clearance-sticker price fonts don't OCR reliably, so once the name's in, a field pops up — <strong>glance at the sticker and type the price</strong>, hit Enter. Then it saves and you're on to the next box.</li>
       <li>Each saved box shows the discount and <strong>StockX / GOAT / eBay-sold</strong> links — the real "good deal?" answer.</li>
     </ol>
     <p class="muted fine">Everything runs on your phone. Nothing is uploaded. Live camera needs an https:// page.</p>
@@ -427,8 +427,10 @@
 
     function checkSaveOrPrompt(){
       if(cap.name && cap.price!=null){ saveBox("scan"); return; }
+      // Name is in — the sticker font won't OCR reliably, so pop the price field
+      // right away (brief grace lets a lucky auto-read land first).
       if(cap.name && cap.price==null && !promptShown && !graceTimer){
-        graceTimer=setTimeout(()=>{ graceTimer=null; if(running && cap.name && cap.price==null) showPricePrompt(); }, 8000);
+        graceTimer=setTimeout(()=>{ graceTimer=null; if(running && cap.name && cap.price==null) showPricePrompt(); }, 1200);
       }
     }
 
@@ -437,7 +439,9 @@
       els.savePrompt.hidden=false;
       els.promptName.textContent=cap.name;
       els.promptPrice.value=""; els.promptMsrp.value=(cap.msrp!=null?cap.msrp:"");
-      setStatus("Got the name — couldn't read the price. Type it, or hold the sticker closer.");
+      setStatus("Got the name ✓ — now type the price off the sticker.");
+      try{ els.promptPrice.focus({preventScroll:false}); }catch(_){}
+      els.savePrompt.scrollIntoView({behavior:"smooth", block:"center"});
       dbg("price prompt shown for "+cap.name);
     }
 
@@ -545,12 +549,14 @@
     els.photoBtn.addEventListener("click", ()=>{ els.ocrInput.value=""; els.ocrInput.click(); });
     els.ocrInput.addEventListener("change",(e)=>{ const f=e.target.files&&e.target.files[0]; if(f) runPhoto(f); });
 
-    els.promptSave.addEventListener("click", ()=>{
+    function submitPrompt(){
       const p=num(els.promptPrice.value), m=num(els.promptMsrp.value);
       if(!(p>=0)){ els.promptPrice.focus(); setStatus("Enter the sticker price to save."); return; }
       cap.price=p; if(m>0) cap.msrp=m; saveBox("manual-price");
-    });
+    }
+    els.promptSave.addEventListener("click", submitPrompt);
     els.promptSkip.addEventListener("click", ()=>{ cap.price=null; cap.msrp=null; saveBox("name-only"); });
+    [els.promptPrice, els.promptMsrp].forEach((el)=>el.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); submitPrompt(); } }));
 
     els.manAdd.addEventListener("click", ()=>{
       const name=els.manName.value.trim(), p=num(els.manPrice.value), m=num(els.manMsrp.value);
